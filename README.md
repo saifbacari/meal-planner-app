@@ -1,50 +1,76 @@
-# Welcome to your Expo app 👋
+# 🍽️ Meal Planner App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+AI-powered meal suggestions for busy people. Get personalized recipe recommendations in seconds based on your current state and fitness goals—no decision fatigue.
 
-## Get started
+## 🎯 MVP Features
 
-1. Install dependencies
+- **Personalized Suggestions**: Get recipes tailored to your state (busy, tired, motivated, etc.) and fitness goals
+- **Quick Decisions**: Find inspiration in 2 clicks instead of endless scrolling
+- **Favorites**: Save recipes you love
+- **Onboarding**: Quick questionnaire to understand your preferences
 
+## 🚀 Quick Start
+
+1. **Install dependencies**
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. **Start the app**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+3. **Run on device/simulator**
+   - Press `i` for iOS Simulator
+   - Press `a` for Android Emulator
+   - Scan QR code with Expo Go app on your phone
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📁 Project Structure
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+meal-planner-app/
+├── app/                    # Expo Router screens
+├── components/             # Reusable components
+├── hooks/                  # Custom React hooks
+├── constants/              # App constants & config
+├── assets/                 # Images, fonts, etc.
+├── PROJECT_SPEC.md         # Full product spec
+└── app.json                # Expo config
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 📚 Documentation
 
-## Learn more
+- [PROJECT_SPEC.md](./PROJECT_SPEC.md) - Full product specification & roadmap
+- [Expo Docs](https://docs.expo.dev/) - Framework documentation
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🛠️ Tech Stack
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Framework**: React Native (Expo)
+- **Navigation**: Expo Router
+- **State Management**: Context API / Zustand (TBD)
+- **Backend**: Vercel Serverless + Supabase
+- **AI**: Claude API (Anthropic)
+- **Recipes API**: TBD
 
-## Join the community
+## 📝 Development
 
-Join our community of developers creating universal apps.
+### Available Scripts
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `npm start` - Start Expo dev server
+- `npm run android` - Run on Android
+- `npm run ios` - Run on iOS
+- `npm test` - Run tests (when configured)
+
+## 🌱 Next Steps
+
+- [ ] Design system & UI components
+- [ ] Onboarding flow
+- [ ] Dashboard with state selection
+- [ ] Recipe suggestion API integration
+- [ ] Favorites management
+
+---
+
+**Status**: MVP in development
+**Last updated**: Feb 2026
