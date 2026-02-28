@@ -308,6 +308,36 @@ export default function DashboardScreen() {
             </Text>
             <Button label="Ajouter" onPress={() => setShowAddIngredientsModal(true)} variant="primary" size="md" />
           </TouchableOpacity>
+
+          {/* Selected Ingredients Display */}
+          {ingredients.length > 0 && (
+            <View style={[styles.selectedIngredientsContainer, { marginTop: Spacing.md, borderColor: colors.border }]}>
+              <Text style={[styles.selectedIngredientsLabel, { color: colors.text }]}>
+                Ingrédients sélectionnés :
+              </Text>
+              <View style={styles.selectedIngredientsList}>
+                {ingredients.map((ingredient) => (
+                  <View
+                    key={ingredient}
+                    style={[
+                      styles.selectedIngredientChip,
+                      { backgroundColor: 'rgba(19, 236, 91, 0.2)', borderColor: '#13ec5b' },
+                    ]}
+                  >
+                    <Text style={[styles.selectedIngredientText, { color: colors.text }]}>
+                      {ingredient}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setIngredients(ingredients.filter((i) => i !== ingredient))}
+                      style={styles.removeButton}
+                    >
+                      <MaterialIcons name="close" size={14} color="#13ec5b" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Forme Physique Section */}
@@ -369,7 +399,7 @@ export default function DashboardScreen() {
             ))
           ) : (
             <View style={styles.emptyState}>
-              <MaterialIcons name="no_meals" size={48} color={colors.textMuted} />
+              <MaterialIcons name="no-meals" size={48} color={colors.textMuted} />
               <Text style={[styles.emptyStateText, { color: colors.text }]}>
                 Aucune suggestion correspondant à vos critères
               </Text>
@@ -473,5 +503,36 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: FontSize.sm,
     textAlign: 'center',
+  },
+  selectedIngredientsContainer: {
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    borderWidth: 1,
+  },
+  selectedIngredientsLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    marginBottom: Spacing.md,
+  },
+  selectedIngredientsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+  },
+  selectedIngredientChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  selectedIngredientText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+  removeButton: {
+    padding: Spacing.xs,
   },
 });
