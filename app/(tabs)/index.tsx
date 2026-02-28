@@ -13,6 +13,8 @@ import { ThemedView } from '@/components/themed-view';
 import { Chip } from '@/components/ui/Chip';
 import { Button } from '@/components/ui/Button';
 import { RecipeCard } from '@/components/ui/RecipeCard';
+import { AddIngredientsModal } from '@/components/modals/AddIngredientsModal';
+import { useRecipeFilter } from '@/hooks/useRecipeFilter';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -41,6 +43,8 @@ const MOCK_RECIPES = [
     time: 15,
     calories: 450,
     featured: true,
+    physicalState: ['fit', 'post_sport'],
+    craving: ['quick', 'light'],
   },
   {
     id: '2',
@@ -51,6 +55,8 @@ const MOCK_RECIPES = [
     ingredients: ['Œufs', 'Persil', 'Ciboulette', 'Fromage'],
     time: 10,
     calories: 320,
+    physicalState: ['fit', 'quick'],
+    craving: ['quick', 'comforting'],
   },
   {
     id: '3',
@@ -61,6 +67,20 @@ const MOCK_RECIPES = [
     ingredients: ['Spaghetti', 'Pancetta', 'Œufs', 'Parmesan'],
     time: 20,
     calories: 680,
+    physicalState: ['tired', 'post_sport'],
+    craving: ['comforting', 'spicy'],
+  },
+  {
+    id: '4',
+    title: 'Salade Méditerranéenne',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
+    category: 'Léger',
+    categoryColor: 'info' as const,
+    ingredients: ['Tomate', 'Feta', 'Olive', 'Concombre'],
+    time: 5,
+    calories: 250,
+    physicalState: ['fit', 'post_sport'],
+    craving: ['light', 'quick'],
   },
 ];
 
@@ -69,8 +89,13 @@ export default function DashboardScreen() {
   const colors = Colors[colorScheme ?? 'light'];
 
   const [selectedPhysicalState, setSelectedPhysicalState] = useState('fit');
-  const [selectedCravings, setSelectedCravings] = useState('comforting');
+  const [selectedCraving, setSelectedCraving] = useState('comforting');
+  const [ingredients, setIngredients] = useState<string[]>([]);
   const [favorited, setFavorited] = useState<Record<string, boolean>>({});
+  const [showAddIngredientsModal, setShowAddIngredientsModal] = useState(false);
+
+  // Filter recipes based on selected state and craving
+  const filteredRecipes = useRecipeFilter(MOCK_RECIPES, selectedPhysicalState, selectedCraving, ingredients);
 
   const toggleFavorite = (id: string) => {
     setFavorited((prev) => ({
@@ -110,7 +135,7 @@ export default function DashboardScreen() {
       >
         {/* Ajouter des ingrédients Section */}
         <View style={[styles.section, { marginTop: Spacing.md }]}>
-          <View
+          <TouchableOpacity
             style={[
               styles.ingredientCard,
               {
@@ -118,15 +143,18 @@ export default function DashboardScreen() {
                 backgroundColor: colorScheme === 'dark' ? 'rgba(19, 236, 91, 0.05)' : 'rgba(19, 236, 91, 0.05)',
               },
             ]}
+            onPress={() => setShowAddIngredientsModal(true)}
           >
             <Text style={[styles.ingredientTitle, { color: colors.text }]}>
               Ajouter des ingrédients
             </Text>
             <Text style={[styles.ingredientSubtitle, { color: colors.textMuted }]}>
-              Qu'avez-vous dans votre frigo ?
+              {ingredients.length > 0
+                ? `${ingredients.length} ingrédient(s) sélectionné(s)`
+                : 'Qu\'avez-vous dans votre frigo ?'}
             </Text>
-            <Button label="Ajouter" onPress={() => {}} variant="primary" size="md" />
-          </View>
+            <Button label="Ajouter" onPress={() => setShowAddIngredientsModal(true)} variant="primary" size="md" />
+          </TouchableOpacity>
         </View>
 
         {/* Forme Physique Section */}
@@ -162,8 +190,8 @@ export default function DashboardScreen() {
               <Chip
                 key={craving.id}
                 label={craving.label}
-                selected={selectedCravings === craving.id}
-                onPress={() => setSelectedCravings(craving.id)}
+                selected={selectedCraving === craving.id}
+                onPress={() => setSelectedCraving(craving.id)}
               />
             ))}
           </ScrollView>
@@ -175,18 +203,38 @@ export default function DashboardScreen() {
             Suggestions pour vous
           </Text>
 
-          {MOCK_RECIPES.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              featured={recipe.featured}
-              onPress={() => {}}
-              onFavorite={() => toggleFavorite(recipe.id)}
-              isFavorited={favorited[recipe.id] || false}
-            />
-          ))}
+          {filteredRecipes.length > 0 ? (
+            filteredRecipes.map((recipe) => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe}
+                featured={recipe.featured}
+                onPress={() => {}}
+                onFavorite={() => toggleFavorite(recipe.id)}
+                isFavorited={favorited[recipe.id] || false}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="no_meals" size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyStateText, { color: colors.text }]}>
+                Aucune suggestion correspondant à vos critères
+              </Text>
+              <Text style={[styles.emptyStateSubtext, { color: colors.textMuted }]}>
+                Essayez de modifier vos sélections
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      {/* Add Ingredients Modal */}
+      <AddIngredientsModal
+        visible={showAddIngredientsModal}
+        onClose={() => setShowAddIngredientsModal(false)}
+        onAdd={setIngredients}
+        currentIngredients={ingredients}
+      />
     </ThemedView>
   );
 }
@@ -256,6 +304,21 @@ const styles = StyleSheet.create({
   },
   ingredientSubtitle: {
     fontSize: FontSize.xs,
+    textAlign: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.xxl,
+    gap: Spacing.md,
+  },
+  emptyStateText: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.semibold,
+    textAlign: 'center',
+  },
+  emptyStateSubtext: {
+    fontSize: FontSize.sm,
     textAlign: 'center',
   },
 });
