@@ -1,98 +1,261 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Chip } from '@/components/ui/Chip';
+import { Button } from '@/components/ui/Button';
+import { RecipeCard } from '@/components/ui/RecipeCard';
+import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
-export default function HomeScreen() {
+const PHYSICAL_STATES = [
+  { id: 'fit', label: 'En forme' },
+  { id: 'tired', label: 'Fatigué' },
+  { id: 'post_sport', label: 'Après sport' },
+  { id: 'sleep', label: 'Sommeil' },
+];
+
+const CRAVINGS = [
+  { id: 'quick', label: 'Rapide' },
+  { id: 'comforting', label: 'Réconfortant' },
+  { id: 'light', label: 'Léger' },
+  { id: 'spicy', label: 'Épicé' },
+];
+
+const MOCK_RECIPES = [
+  {
+    id: '1',
+    title: 'Poke Bowl Saumon',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
+    category: 'Frais & Équilibré',
+    categoryColor: 'success' as const,
+    ingredients: ['Saumon', 'Avocat', 'Riz', 'Edamame'],
+    time: 15,
+    calories: 450,
+    featured: true,
+  },
+  {
+    id: '2',
+    title: 'Omelette aux fines herbes',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3VsOZS_ajItyXCKJtzqOer_tvTD78Q44betwF2oJaWfMx3AiwPwM75cwOSzRELjeG2WALuAN3UpVnOiJMyNUo09ItJ_6_JPfFvdM1fcpyB6Sa4mKAe7swx5Un7OCcoFkosgWHRnexQd599MZqNQHT4WIX_5ttnByJw389z3yL3z3uQN1UNvTruNxuLIn9MgtjU9u7g7aUJwCBHTPhH-1XL00T-VJwGhMj6RKm9AcY1UybI1MNBqXWdBurWf6AOi1b2MTuUJ6J_0va',
+    category: 'Végé',
+    categoryColor: 'warning' as const,
+    ingredients: ['Œufs', 'Persil', 'Ciboulette', 'Fromage'],
+    time: 10,
+    calories: 320,
+  },
+  {
+    id: '3',
+    title: 'Pâtes Carbonara',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB4OVCfCjf6nlnJUoQH6BY5sfYoHxQk-XZEzr_X_g5jcx3WwVnLg8hSubxTWwNaYigPIQxGwbYHrXSAyrHo7p88I5fbSUYylxd6y9N4p4cA00V-Qkhu0dBCIwCYvQXvzpzexPq8HJeaURXgc755EkbRGl5nwOu3s9lKf7puFjWMMLBthMLwY1MCgo2U5Vq89FZHYVzTwMZ6xDjCyoDCGLC8d_PYosBbqkEwPFhyRSJNoco9XCjYuWhKOqDj0EQBFUkFUSJzB398je2w',
+    category: 'Gourmand',
+    categoryColor: 'error' as const,
+    ingredients: ['Spaghetti', 'Pancetta', 'Œufs', 'Parmesan'],
+    time: 20,
+    calories: 680,
+  },
+];
+
+export default function DashboardScreen() {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
+  const [selectedPhysicalState, setSelectedPhysicalState] = useState('fit');
+  const [selectedCravings, setSelectedCravings] = useState('comforting');
+  const [favorited, setFavorited] = useState<Record<string, boolean>>({});
+
+  const toggleFavorite = (id: string) => {
+    setFavorited((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ThemedView style={styles.container}>
+      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Header */}
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <MaterialIcons name="restaurant" size={28} color={colors.text} />
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Qu'est-ce qu'on mange ?
+        </Text>
+        <TouchableOpacity style={styles.notificationButton}>
+          <MaterialIcons name="notifications" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
+        Basé sur les ingrédients de votre frigo
+      </Text>
+
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Ajouter des ingrédients Section */}
+        <View style={[styles.section, { marginTop: Spacing.md }]}>
+          <View
+            style={[
+              styles.ingredientCard,
+              {
+                borderColor: '#13ec5b',
+                backgroundColor: colorScheme === 'dark' ? 'rgba(19, 236, 91, 0.05)' : 'rgba(19, 236, 91, 0.05)',
+              },
+            ]}
+          >
+            <Text style={[styles.ingredientTitle, { color: colors.text }]}>
+              Ajouter des ingrédients
+            </Text>
+            <Text style={[styles.ingredientSubtitle, { color: colors.textMuted }]}>
+              Qu'avez-vous dans votre frigo ?
+            </Text>
+            <Button label="Ajouter" onPress={() => {}} variant="primary" size="md" />
+          </View>
+        </View>
+
+        {/* Forme Physique Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Forme physique</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsScroll}
+            contentContainerStyle={{ gap: Spacing.md, paddingHorizontal: Spacing.md }}
+          >
+            {PHYSICAL_STATES.map((state) => (
+              <Chip
+                key={state.id}
+                label={state.label}
+                selected={selectedPhysicalState === state.id}
+                onPress={() => setSelectedPhysicalState(state.id)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Envies du moment Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Envies du moment</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipsScroll}
+            contentContainerStyle={{ gap: Spacing.md, paddingHorizontal: Spacing.md }}
+          >
+            {CRAVINGS.map((craving) => (
+              <Chip
+                key={craving.id}
+                label={craving.label}
+                selected={selectedCravings === craving.id}
+                onPress={() => setSelectedCravings(craving.id)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Suggestions Section */}
+        <View style={styles.section}>
+          <Text style={[styles.suggestionsTitle, { color: colors.text }]}>
+            Suggestions pour vous
+          </Text>
+
+          {MOCK_RECIPES.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              featured={recipe.featured}
+              onPress={() => {}}
+              onFavorite={() => toggleFavorite(recipe.id)}
+              isFavorited={favorited[recipe.id] || false}
+            />
+          ))}
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.md,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  headerTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    flex: 1,
+    textAlign: 'center',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headerSubtitle: {
+    fontSize: FontSize.sm,
+    textAlign: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+  },
+  notificationButton: {
+    padding: Spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: Spacing.md,
+  },
+  section: {
+    marginBottom: Spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    marginBottom: Spacing.md,
+    marginLeft: Spacing.md,
+  },
+  suggestionsTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+    marginBottom: Spacing.lg,
+  },
+  chipsScroll: {
+    marginHorizontal: -Spacing.md,
+  },
+  ingredientCard: {
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  ingredientTitle: {
+    fontSize: FontSize.base,
+    fontWeight: FontWeight.bold,
+    textAlign: 'center',
+  },
+  ingredientSubtitle: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
   },
 });
