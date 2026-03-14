@@ -52,14 +52,27 @@ export function RecipeCard({
       >
         <View style={styles.featuredBadgeContainer}>
           <Badge label="Top Choix" variant="primary" />
+          <TouchableOpacity onPress={onFavorite} style={styles.favoriteButton} activeOpacity={0.7}>
+            <MaterialIcons
+              name={isFavorited ? 'favorite' : 'favorite-border'}
+              size={20}
+              color={isFavorited ? '#ef4444' : colors.textMuted}
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.featuredContent}>
-          <Image source={{ uri: recipe.image }} style={styles.featuredImage} />
+          {recipe.image ? (
+            <Image source={{ uri: recipe.image }} style={styles.featuredImage} />
+          ) : (
+            <View style={[styles.featuredImage, styles.imagePlaceholder]}>
+              <Text style={styles.imagePlaceholderEmoji}>🍽️</Text>
+            </View>
+          )}
 
           <View style={styles.featuredInfo}>
             <View style={styles.categoryBadge}>
-              <Badge label="Frais & Équilibré" variant="success" />
+              <Badge label={recipe.category} variant={recipe.categoryColor || 'success'} />
             </View>
 
             <Text style={[styles.title, { color: colors.text }]}>{recipe.title}</Text>
@@ -77,7 +90,7 @@ export function RecipeCard({
               </View>
 
               <View style={styles.stat}>
-                <MaterialIcons name="local_fire_department" size={14} color={colors.textMuted} />
+                <MaterialIcons name="whatshot" size={14} color={colors.textMuted} />
                 <Text style={[styles.statText, { color: colors.textMuted }]}>
                   {recipe.calories} kcal
                 </Text>
@@ -103,7 +116,13 @@ export function RecipeCard({
       activeOpacity={0.7}
     >
       <View style={styles.content}>
-        <Image source={{ uri: recipe.image }} style={styles.image} />
+        {recipe.image ? (
+          <Image source={{ uri: recipe.image }} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <Text style={styles.imagePlaceholderEmoji}>🍽️</Text>
+          </View>
+        )}
 
         <View style={styles.info}>
           <View style={styles.headerRow}>
@@ -120,7 +139,7 @@ export function RecipeCard({
               activeOpacity={0.7}
             >
               <MaterialIcons
-                name={isFavorited ? 'favorite' : 'favorite_border'}
+                name={isFavorited ? 'favorite' : 'favorite-border'}
                 size={20}
                 color={isFavorited ? '#ef4444' : colors.textMuted}
               />
@@ -140,7 +159,7 @@ export function RecipeCard({
             </View>
 
             <View style={styles.stat}>
-              <MaterialIcons name="local_fire_department" size={12} color={colors.textMuted} />
+              <MaterialIcons name="whatshot" size={12} color={colors.textMuted} />
               <Text style={[styles.statText, { color: colors.textMuted }]}>
                 {recipe.calories} kcal
               </Text>
@@ -168,6 +187,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: Radius.md,
+  },
+  imagePlaceholder: {
+    backgroundColor: 'rgba(19, 236, 91, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePlaceholderEmoji: {
+    fontSize: 32,
   },
   info: {
     flex: 1,
@@ -215,10 +242,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   featuredBadgeContainer: {
-    position: 'absolute',
-    top: Spacing.md,
-    right: Spacing.md,
-    zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
   },
   featuredContent: {
     flexDirection: 'row',

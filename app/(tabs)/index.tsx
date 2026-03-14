@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -6,16 +6,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { ThemedView } from '@/components/themed-view';
 import { Chip } from '@/components/ui/Chip';
-import { Button } from '@/components/ui/Button';
 import { RecipeCard } from '@/components/ui/RecipeCard';
-import { AddIngredientsModal } from '@/components/modals/AddIngredientsModal';
-import { useRecipeFilter } from '@/hooks/useRecipeFilter';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { useFridge } from '@/contexts/FridgeContext';
+import { generateRecipeSuggestions, filterRecipes, AIRecipe } from '@/lib/claude';
+import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const PHYSICAL_STATES = [
@@ -32,229 +34,51 @@ const CRAVINGS = [
   { id: 'spicy', label: 'Épicé' },
 ];
 
-const MOCK_RECIPES = [
-  // Rapide & Léger
-  {
-    id: '1',
-    title: 'Poke Bowl Saumon',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Frais & Équilibré',
-    categoryColor: 'success' as const,
-    ingredients: ['Saumon', 'Avocat', 'Riz', 'Edamame'],
-    time: 15,
-    calories: 450,
-    featured: true,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['quick', 'light'],
-  },
-  {
-    id: '2',
-    title: 'Salade Méditerranéenne',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Léger',
-    categoryColor: 'info' as const,
-    ingredients: ['Tomate', 'Feta', 'Olive', 'Concombre'],
-    time: 5,
-    calories: 250,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['light', 'quick'],
-  },
-  {
-    id: '3',
-    title: 'Sandwich Poulet Grillé',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Protéiné',
-    categoryColor: 'primary' as const,
-    ingredients: ['Poulet', 'Pain', 'Laitue', 'Tomate'],
-    time: 8,
-    calories: 380,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['quick'],
-  },
-
-  // Réconfortant
-  {
-    id: '4',
-    title: 'Pâtes Carbonara',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB4OVCfCjf6nlnJUoQH6BY5sfYoHxQk-XZEzr_X_g5jcx3WwVnLg8hSubxTWwNaYigPIQxGwbYHrXSAyrHo7p88I5fbSUYylxd6y9N4p4cA00V-Qkhu0dBCIwCYvQXvzpzexPq8HJeaURXgc755EkbRGl5nwOu3s9lKf7puFjWMMLBthMLwY1MCgo2U5Vq89FZHYVzTwMZ6xDjCyoDCGLC8d_PYosBbqkEwPFhyRSJNoco9XCjYuWhKOqDj0EQBFUkFUSJzB398je2w',
-    category: 'Gourmand',
-    categoryColor: 'error' as const,
-    ingredients: ['Spaghetti', 'Pancetta', 'Œufs', 'Parmesan'],
-    time: 20,
-    calories: 680,
-    physicalState: ['tired', 'post_sport'],
-    craving: ['comforting'],
-  },
-  {
-    id: '5',
-    title: 'Omelette aux fines herbes',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3VsOZS_ajItyXCKJtzqOer_tvTD78Q44betwF2oJaWfMx3AiwPwM75cwOSzRELjeG2WALuAN3UpVnOiJMyNUo09ItJ_6_JPfFvdM1fcpyB6Sa4mKAe7swx5Un7OCcoFkosgWHRnexQd599MZqNQHT4WIX_5ttnByJw389z3yL3z3uQN1UNvTruNxuLIn9MgtjU9u7g7aUJwCBHTPhH-1XL00T-VJwGhMj6RKm9AcY1UybI1MNBqXWdBurWf6AOi1b2MTuUJ6J_0va',
-    category: 'Végé',
-    categoryColor: 'warning' as const,
-    ingredients: ['Œufs', 'Persil', 'Ciboulette', 'Fromage'],
-    time: 10,
-    calories: 320,
-    physicalState: ['fit', 'tired'],
-    craving: ['quick', 'comforting'],
-  },
-  {
-    id: '6',
-    title: 'Risotto aux Champignons',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Réconfortant',
-    categoryColor: 'warning' as const,
-    ingredients: ['Riz Arborio', 'Champignon', 'Oignon', 'Vin blanc'],
-    time: 30,
-    calories: 520,
-    physicalState: ['tired', 'sleep'],
-    craving: ['comforting'],
-  },
-  {
-    id: '7',
-    title: 'Burger Maison',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Gourmand',
-    categoryColor: 'error' as const,
-    ingredients: ['Steak haché', 'Pain burger', 'Fromage', 'Salade'],
-    time: 15,
-    calories: 750,
-    physicalState: ['post_sport', 'tired'],
-    craving: ['comforting'],
-  },
-
-  // Épicé
-  {
-    id: '8',
-    title: 'Curry de Poulet',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Épicé',
-    categoryColor: 'error' as const,
-    ingredients: ['Poulet', 'Curry', 'Coco', 'Riz'],
-    time: 25,
-    calories: 580,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['spicy'],
-  },
-  {
-    id: '9',
-    title: 'Tacos Épicés',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Épicé',
-    categoryColor: 'error' as const,
-    ingredients: ['Viande', 'Tortilla', 'Jalapeño', 'Lime'],
-    time: 12,
-    calories: 420,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['quick', 'spicy'],
-  },
-  {
-    id: '10',
-    title: 'Pad Thaï',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Épicé',
-    categoryColor: 'error' as const,
-    ingredients: ['Nouilles', 'Crevettes', 'Cacahuète', 'Piment'],
-    time: 20,
-    calories: 490,
-    physicalState: ['post_sport'],
-    craving: ['spicy'],
-  },
-
-  // Pour dormir / Fatigué
-  {
-    id: '11',
-    title: 'Lait Chaud Miel Amandes',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Apaisant',
-    categoryColor: 'info' as const,
-    ingredients: ['Lait', 'Miel', 'Amande', 'Cannelle'],
-    time: 5,
-    calories: 180,
-    physicalState: ['sleep', 'tired'],
-    craving: ['comforting'],
-  },
-  {
-    id: '12',
-    title: 'Soupe à l\'Oignon',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Réconfortant',
-    categoryColor: 'warning' as const,
-    ingredients: ['Oignon', 'Bouillon', 'Pain', 'Fromage'],
-    time: 35,
-    calories: 220,
-    physicalState: ['tired', 'sleep'],
-    craving: ['comforting'],
-  },
-  {
-    id: '13',
-    title: 'Œufs au Plat & Toast',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3VsOZS_ajItyXCKJtzqOer_tvTD78Q44betwF2oJaWfMx3AiwPwM75cwOSzRELjeG2WALuAN3UpVnOiJMyNUo09ItJ_6_JPfFvdM1fcpyB6Sa4mKAe7swx5Un7OCcoFkosgWHRnexQd599MZqNQHT4WIX_5ttnByJw389z3yL3z3uQN1UNvTruNxuLIn9MgtjU9u7g7aUJwCBHTPhH-1XL00T-VJwGhMj6RKm9AcY1UybI1MNBqXWdBurWf6AOi1b2MTuUJ6J_0va',
-    category: 'Rapide',
-    categoryColor: 'primary' as const,
-    ingredients: ['Œufs', 'Pain', 'Beurre', 'Sel'],
-    time: 6,
-    calories: 280,
-    physicalState: ['tired', 'fit'],
-    craving: ['quick', 'comforting'],
-  },
-
-  // Petit-déj
-  {
-    id: '14',
-    title: 'Porridge Fruits Rouges',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Léger',
-    categoryColor: 'info' as const,
-    ingredients: ['Flocons d\'avoine', 'Lait', 'Fraise', 'Miel'],
-    time: 10,
-    calories: 340,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['light', 'quick'],
-  },
-  {
-    id: '15',
-    title: 'Œufs Bénédictine',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3VsOZS_ajItyXCKJtzqOer_tvTD78Q44betwF2oJaWfMx3AiwPwM75cwOSzRELjeG2WALuAN3UpVnOiJMyNUo09ItJ_6_JPfFvdM1fcpyB6Sa4mKAe7swx5Un7OCcoFkosgWHRnexQd599MZqNQHT4WIX_5ttnByJw389z3yL3z3uQN1UNvTruNxuLIn9MgtjU9u7g7aUJwCBHTPhH-1XL00T-VJwGhMj6RKm9AcY1UybI1MNBqXWdBurWf6AOi1b2MTuUJ6J_0va',
-    category: 'Gourmand',
-    categoryColor: 'error' as const,
-    ingredients: ['Œufs', 'Sauce Hollandaise', 'Pain', 'Jambon'],
-    time: 15,
-    calories: 520,
-    physicalState: ['post_sport'],
-    craving: ['comforting'],
-  },
-  {
-    id: '16',
-    title: 'Smoothie Protéiné',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBevzWw1dLKZbWT7ZA6S6QOm9uZnm4S_yE3Br6kzpPSm-eJk4keC-c1fIQESYyLIWQcMqkz_sJgn_9AO1JnykAlZ0yA5avbdocEujfoa8GOsEAV3z5iJ5Nij5AjN7A8s9INdkHSnoQm3JVSZZnARLmlzEGmkf5Do7Ayignyiqr1cmMZVE-tBtoLjtVqwCVn2LePhCcoUND3xo0uANPiwRQbmTnAPJVodmpAHyBKSl7dJmgWv_pX4xmAZPLEsa50lbxAg7MPvxCVltqy',
-    category: 'Protéiné',
-    categoryColor: 'primary' as const,
-    ingredients: ['Banane', 'Yaourt', 'Protéine', 'Miel'],
-    time: 3,
-    calories: 290,
-    physicalState: ['fit', 'post_sport'],
-    craving: ['quick', 'light'],
-  },
-];
+const hasApiKey =
+  !!process.env.EXPO_PUBLIC_CLAUDE_API_KEY &&
+  process.env.EXPO_PUBLIC_CLAUDE_API_KEY !== 'your_claude_api_key_here';
 
 export default function DashboardScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { items: fridgeItems } = useFridge();
 
   const [selectedPhysicalState, setSelectedPhysicalState] = useState('fit');
   const [selectedCraving, setSelectedCraving] = useState('comforting');
-  const [ingredients, setIngredients] = useState<string[]>([]);
   const [favorited, setFavorited] = useState<Record<string, boolean>>({});
-  const [showAddIngredientsModal, setShowAddIngredientsModal] = useState(false);
+  const [aiRecipes, setAiRecipes] = useState<AIRecipe[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
-  // Filter recipes based on selected state and craving
-  const filteredRecipes = useRecipeFilter(MOCK_RECIPES, selectedPhysicalState, selectedCraving, ingredients);
+  const ingredients = fridgeItems.map((i) => i.name);
+
+  const generateSuggestions = useCallback(async () => {
+    if (ingredients.length === 0 || !hasApiKey) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const recipes = await generateRecipeSuggestions(ingredients);
+      setAiRecipes(recipes);
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : 'Erreur lors de la génération');
+    } finally {
+      setAiLoading(false);
+    }
+  }, [ingredients.join(',')]);
+
+  // Auto-generate when fridge content changes
+  useEffect(() => {
+    if (ingredients.length === 0) {
+      setAiRecipes([]);
+      return;
+    }
+    generateSuggestions();
+  }, [ingredients.join(',')]);
 
   const toggleFavorite = (id: string) => {
-    setFavorited((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+    setFavorited((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -265,12 +89,12 @@ export default function DashboardScreen() {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.background },
+          { backgroundColor: colors.background, paddingTop: insets.top + Spacing.sm },
         ]}
       >
         <MaterialIcons name="restaurant" size={28} color={colors.text} />
         <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Qu'est-ce qu'on mange ?
+          Qu'est-ce qu'on mange ? 🍽️
         </Text>
         <TouchableOpacity style={styles.notificationButton}>
           <MaterialIcons name="notifications" size={24} color={colors.text} />
@@ -286,61 +110,44 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Ajouter des ingrédients Section */}
+        {/* Frigo Section */}
         <View style={[styles.section, { marginTop: Spacing.md }]}>
           <TouchableOpacity
-            style={[
-              styles.ingredientCard,
-              {
-                borderColor: '#13ec5b',
-                backgroundColor: colorScheme === 'dark' ? 'rgba(19, 236, 91, 0.05)' : 'rgba(19, 236, 91, 0.05)',
-              },
-            ]}
-            onPress={() => setShowAddIngredientsModal(true)}
+            style={[styles.fridgeCard, { borderColor: '#13ec5b', backgroundColor: 'rgba(19, 236, 91, 0.05)' }]}
+            onPress={() => router.navigate('/(tabs)/fridge')}
           >
-            <Text style={[styles.ingredientTitle, { color: colors.text }]}>
-              Ajouter des ingrédients
-            </Text>
-            <Text style={[styles.ingredientSubtitle, { color: colors.textMuted }]}>
-              {ingredients.length > 0
-                ? `${ingredients.length} ingrédient(s) sélectionné(s)`
-                : 'Qu\'avez-vous dans votre frigo ?'}
-            </Text>
-            <Button label="Ajouter" onPress={() => setShowAddIngredientsModal(true)} variant="primary" size="md" />
-          </TouchableOpacity>
-
-          {/* Selected Ingredients Display */}
-          {ingredients.length > 0 && (
-            <View style={[styles.selectedIngredientsContainer, { marginTop: Spacing.md, borderColor: colors.border }]}>
-              <Text style={[styles.selectedIngredientsLabel, { color: colors.text }]}>
-                Ingrédients sélectionnés :
+            <View style={styles.fridgeCardHeader}>
+              <MaterialIcons name="kitchen" size={22} color="#13ec5b" />
+              <Text style={[styles.fridgeCardTitle, { color: colors.text }]}>Mon Frigo</Text>
+              {fridgeItems.length > 0 && (
+                <View style={styles.fridgeBadge}>
+                  <Text style={styles.fridgeBadgeText}>{fridgeItems.length}</Text>
+                </View>
+              )}
+              <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} style={{ marginLeft: 'auto' }} />
+            </View>
+            {fridgeItems.length === 0 ? (
+              <Text style={[styles.fridgeCardEmpty, { color: colors.textMuted }]}>
+                Aucun ingrédient — Appuyez pour gérer votre frigo
               </Text>
-              <View style={styles.selectedIngredientsList}>
-                {ingredients.map((ingredient) => (
-                  <View
-                    key={ingredient}
-                    style={[
-                      styles.selectedIngredientChip,
-                      { backgroundColor: 'rgba(19, 236, 91, 0.2)', borderColor: '#13ec5b' },
-                    ]}
-                  >
-                    <Text style={[styles.selectedIngredientText, { color: colors.text }]}>
-                      {ingredient}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => setIngredients(ingredients.filter((i) => i !== ingredient))}
-                      style={styles.removeButton}
-                    >
-                      <MaterialIcons name="close" size={14} color="#13ec5b" />
-                    </TouchableOpacity>
+            ) : (
+              <View style={styles.fridgeChips}>
+                {fridgeItems.slice(0, 6).map((item) => (
+                  <View key={item.id} style={styles.fridgeChip}>
+                    <Text style={styles.fridgeChipText}>{item.name}</Text>
                   </View>
                 ))}
+                {fridgeItems.length > 6 && (
+                  <Text style={[styles.fridgeMore, { color: colors.textMuted }]}>
+                    +{fridgeItems.length - 6} autres
+                  </Text>
+                )}
               </View>
-            </View>
-          )}
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* Forme Physique Section */}
+        {/* Forme Physique */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Forme physique</Text>
           <ScrollView
@@ -360,7 +167,7 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
 
-        {/* Envies du moment Section */}
+        {/* Envies du moment */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Envies du moment</Text>
           <ScrollView
@@ -380,44 +187,88 @@ export default function DashboardScreen() {
           </ScrollView>
         </View>
 
-        {/* Suggestions Section */}
+        {/* Suggestions */}
         <View style={styles.section}>
-          <Text style={[styles.suggestionsTitle, { color: colors.text }]}>
-            Suggestions pour vous
-          </Text>
+          <View style={styles.suggestionsHeader}>
+            <Text style={[styles.suggestionsTitle, { color: colors.text }]}>
+              Suggestions pour vous
+            </Text>
+            {!aiLoading && ingredients.length > 0 && hasApiKey && (
+              <TouchableOpacity onPress={generateSuggestions} style={styles.refreshBtn}>
+                <MaterialIcons name="refresh" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
 
-          {filteredRecipes.length > 0 ? (
-            filteredRecipes.map((recipe) => (
+          {/* Frigo vide */}
+          {ingredients.length === 0 && (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="kitchen" size={48} color={colors.textMuted} />
+              <Text style={[styles.emptyStateText, { color: colors.text }]}>
+                Votre frigo est vide
+              </Text>
+              <Text style={[styles.emptyStateSubtext, { color: colors.textMuted }]}>
+                Ajoutez des ingrédients dans l'onglet Frigo pour obtenir des suggestions
+              </Text>
+              <TouchableOpacity
+                style={styles.goToFridgeBtn}
+                onPress={() => router.navigate('/(tabs)/fridge')}
+              >
+                <Text style={styles.goToFridgeBtnText}>Gérer mon frigo</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Loading */}
+          {aiLoading && (
+            <View style={styles.loadingState}>
+              <ActivityIndicator color={ColorPalette.primary} size="large" />
+              <Text style={[styles.loadingText, { color: colors.textMuted }]}>
+                L'IA compose vos recettes...
+              </Text>
+            </View>
+          )}
+
+          {/* Erreur */}
+          {!aiLoading && aiError !== '' && (
+            <View style={styles.errorState}>
+              <MaterialIcons name="error-outline" size={36} color={ColorPalette.error} />
+              <Text style={[styles.errorText, { color: ColorPalette.error }]}>{aiError}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={generateSuggestions}>
+                <Text style={styles.retryBtnText}>Réessayer</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Résultats IA filtrés localement */}
+          {!aiLoading && aiError === '' && (() => {
+            const filtered = filterRecipes(aiRecipes, selectedPhysicalState, selectedCraving);
+            if (filtered.length === 0 && aiRecipes.length > 0) {
+              return (
+                <View style={styles.emptyState}>
+                  <MaterialIcons name="tune" size={36} color={colors.textMuted} />
+                  <Text style={[styles.emptyStateText, { color: colors.text }]}>
+                    Aucune recette pour ces critères
+                  </Text>
+                  <Text style={[styles.emptyStateSubtext, { color: colors.textMuted }]}>
+                    Essayez une autre humeur ou forme physique
+                  </Text>
+                </View>
+              );
+            }
+            return filtered.map((recipe, index) => (
               <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
-                featured={recipe.featured}
+                featured={index === 0}
                 onPress={() => {}}
                 onFavorite={() => toggleFavorite(recipe.id)}
                 isFavorited={favorited[recipe.id] || false}
               />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <MaterialIcons name="no-meals" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyStateText, { color: colors.text }]}>
-                Aucune suggestion correspondant à vos critères
-              </Text>
-              <Text style={[styles.emptyStateSubtext, { color: colors.textMuted }]}>
-                Essayez de modifier vos sélections
-              </Text>
-            </View>
-          )}
+            ));
+          })()}
         </View>
       </ScrollView>
-
-      {/* Add Ingredients Modal */}
-      <AddIngredientsModal
-        visible={showAddIngredientsModal}
-        onClose={() => setShowAddIngredientsModal(false)}
-        onAdd={setIngredients}
-        currentIngredients={ingredients}
-      />
     </ThemedView>
   );
 }
@@ -430,7 +281,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
     gap: Spacing.md,
   },
@@ -464,30 +314,75 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     marginLeft: Spacing.md,
   },
+  suggestionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.lg,
+  },
   suggestionsTitle: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    marginBottom: Spacing.lg,
+  },
+  refreshBtn: {
+    padding: Spacing.sm,
   },
   chipsScroll: {
     marginHorizontal: -Spacing.md,
   },
-  ingredientCard: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
+  fridgeCard: {
+    borderWidth: 1,
     borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    alignItems: 'center',
-    gap: Spacing.md,
+    padding: Spacing.md,
+    gap: Spacing.sm,
   },
-  ingredientTitle: {
+  fridgeCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  fridgeCardTitle: {
     fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
-    textAlign: 'center',
   },
-  ingredientSubtitle: {
+  fridgeBadge: {
+    backgroundColor: '#13ec5b',
+    borderRadius: Radius.full,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  fridgeBadgeText: {
     fontSize: FontSize.xs,
-    textAlign: 'center',
+    fontWeight: FontWeight.bold,
+    color: '#000',
+  },
+  fridgeCardEmpty: {
+    fontSize: FontSize.sm,
+    paddingLeft: Spacing.sm,
+  },
+  fridgeChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    paddingTop: Spacing.xs,
+  },
+  fridgeChip: {
+    backgroundColor: 'rgba(19, 236, 91, 0.15)',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+  },
+  fridgeChipText: {
+    fontSize: FontSize.xs,
+    color: '#13ec5b',
+    fontWeight: FontWeight.medium,
+  },
+  fridgeMore: {
+    fontSize: FontSize.xs,
+    alignSelf: 'center',
   },
   emptyState: {
     alignItems: 'center',
@@ -503,36 +398,59 @@ const styles = StyleSheet.create({
   emptyStateSubtext: {
     fontSize: FontSize.sm,
     textAlign: 'center',
+    lineHeight: 20,
   },
-  selectedIngredientsContainer: {
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    borderWidth: 1,
+  goToFridgeBtn: {
+    backgroundColor: ColorPalette.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.sm,
+    marginTop: Spacing.sm,
   },
-  selectedIngredientsLabel: {
-    fontSize: FontSize.sm,
+  goToFridgeBtnText: {
+    fontSize: FontSize.base,
     fontWeight: FontWeight.semibold,
-    marginBottom: Spacing.md,
+    color: '#000',
   },
-  selectedIngredientsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  loadingState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xxl,
     gap: Spacing.md,
   },
-  selectedIngredientChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-  },
-  selectedIngredientText: {
+  loadingText: {
     fontSize: FontSize.sm,
+  },
+  errorState: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xl,
+    gap: Spacing.md,
+  },
+  errorText: {
+    fontSize: FontSize.sm,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    borderWidth: 1,
+    borderColor: ColorPalette.error,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.sm,
+  },
+  retryBtnText: {
+    color: ColorPalette.error,
     fontWeight: FontWeight.medium,
   },
-  removeButton: {
-    padding: Spacing.xs,
+  refineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  refineBtnText: {
+    fontSize: FontSize.sm,
   },
 });

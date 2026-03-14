@@ -22,7 +22,7 @@ export default function TabLayout() {
         options={{
           title: 'Suggestions',
           tabBarIcon: ({ color }) => (
-            <MaterialIcons name="restaurant_menu" size={24} color={color} />
+            <MaterialIcons name="restaurant" size={24} color={color} />
           ),
         }}
       />
