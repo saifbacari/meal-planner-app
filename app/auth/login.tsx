@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,28 @@ import { ColorPalette, Colors, Spacing, Radius, FontSize, FontWeight } from '@/c
 
 const C = Colors.dark;
 
+// Affiche brièvement le dernier caractère saisi avant de masquer
+function usePasswordPeek(setter: (v: string) => void) {
+  const [secure, setSecure] = useState(true);
+  const prevLength = useRef(0);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleChange = useCallback((text: string) => {
+    setter(text);
+    if (text.length > prevLength.current) {
+      setSecure(false);
+      if (timeout.current) clearTimeout(timeout.current);
+      timeout.current = setTimeout(() => setSecure(true), 600);
+    } else {
+      if (timeout.current) clearTimeout(timeout.current);
+      setSecure(true);
+    }
+    prevLength.current = text.length;
+  }, [setter]);
+
+  return { secure, handleChange };
+}
+
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, signUp } = useAuth();
@@ -24,8 +46,11 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const pwdPeek = usePasswordPeek(setPassword);
+  const confirmPeek = usePasswordPeek(setConfirmPassword);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const validate = () => {
     if (!email.includes('@')) return 'Adresse email invalide.';
@@ -36,6 +61,7 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     setError('');
+    setSuccess('');
     const validationError = validate();
     if (validationError) {
       setError(validationError);
@@ -43,15 +69,24 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    const { error: authError } = mode === 'login'
-      ? await signIn(email, password)
-      : await signUp(email, password);
-    setLoading(false);
-
-    if (authError) {
-      setError(authError.message);
-    } else if (mode === 'signup') {
-      setError('Compte créé ! Vérifiez votre email pour confirmer.');
+    if (mode === 'login') {
+      const { error: authError } = await signIn(email, password);
+      setLoading(false);
+      if (authError) {
+        setError(authError.message);
+      } else {
+        router.replace('/');
+      }
+    } else {
+      const { error: authError, needsConfirmation } = await signUp(email, password);
+      setLoading(false);
+      if (authError) {
+        setError(authError.message);
+      } else if (needsConfirmation) {
+        setSuccess('Compte créé ! Vérifiez votre email pour confirmer.');
+      } else {
+        router.replace('/');
+      }
     }
   };
 
@@ -106,15 +141,18 @@ export default function LoginScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoComplete="email"
+              returnKeyType="next"
             />
             <TextInput
               style={styles.input}
               placeholder="Mot de passe"
               placeholderTextColor={C.textMuted}
               value={password}
-              onChangeText={setPassword}
-              secureTextEntry
+              onChangeText={pwdPeek.handleChange}
+              secureTextEntry={pwdPeek.secure}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              returnKeyType={mode === 'login' ? 'done' : 'next'}
+              onSubmitEditing={mode === 'login' ? handleSubmit : undefined}
             />
             {mode === 'signup' && (
               <TextInput
@@ -122,15 +160,18 @@ export default function LoginScreen() {
                 placeholder="Confirmer le mot de passe"
                 placeholderTextColor={C.textMuted}
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
+                onChangeText={confirmPeek.handleChange}
+                secureTextEntry={confirmPeek.secure}
                 autoComplete="new-password"
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
               />
             )}
           </View>
 
-          {/* Error */}
+          {/* Error / Success */}
           {error ? <Text style={styles.error}>{error}</Text> : null}
+          {success ? <Text style={styles.successMsg}>{success}</Text> : null}
 
           {/* Submit */}
           <TouchableOpacity
@@ -226,6 +267,11 @@ const styles = StyleSheet.create({
   error: {
     fontSize: FontSize.sm,
     color: ColorPalette.error,
+    textAlign: 'center',
+  },
+  successMsg: {
+    fontSize: FontSize.sm,
+    color: ColorPalette.primary,
     textAlign: 'center',
   },
   btn: {

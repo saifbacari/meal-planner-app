@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   Alert,
@@ -14,11 +14,43 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useFridge } from '@/contexts/FridgeContext';
+import { useFridge, FridgeItem } from '@/contexts/FridgeContext';
 import { BarcodeScannerModal } from '@/components/modals/BarcodeScannerModal';
 import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
+
+const CATEGORIES: { label: string; emoji: string; names: string[] }[] = [
+  { label: 'Essentiels', emoji: '🫙', names: ["huile d'olive", 'beurre', 'sel & poivre', 'ail', 'oignon'] },
+  { label: 'Féculents & Céréales', emoji: '🍝', names: ['pâtes', 'riz', 'farine', 'pain', 'lentilles'] },
+  { label: 'Produits frais', emoji: '🥚', names: ['œufs', 'lait', 'fromage', 'yaourt', 'crème fraîche'] },
+  { label: 'Fruits & Légumes', emoji: '🥦', names: ['tomates', 'pommes de terre', 'carottes', 'citron', 'épinards'] },
+  { label: 'Sauces & Condiments', emoji: '🥫', names: ['moutarde', 'sauce soja', 'coulis de tomate', 'vinaigre', 'olives'] },
+  { label: 'Herbes & Épices', emoji: '🌿', names: ['herbes fraîches', 'cumin', 'paprika', 'cannelle', 'thym'] },
+  { label: 'Douceurs', emoji: '🍯', names: ['sucre', 'miel', 'chocolat', 'confiture'] },
+];
+
+function groupByCategory(items: FridgeItem[]): { label: string; emoji: string; items: FridgeItem[] }[] {
+  const result: { label: string; emoji: string; items: FridgeItem[] }[] = [];
+  const assigned = new Set<string>();
+
+  for (const cat of CATEGORIES) {
+    const matched = items.filter((item) =>
+      cat.names.some((n) => n.toLowerCase() === item.name.toLowerCase())
+    );
+    if (matched.length > 0) {
+      result.push({ label: cat.label, emoji: cat.emoji, items: matched });
+      matched.forEach((i) => assigned.add(i.id));
+    }
+  }
+
+  const others = items.filter((i) => !assigned.has(i.id));
+  if (others.length > 0) {
+    result.push({ label: 'Autres', emoji: '📦', items: others });
+  }
+
+  return result;
+}
 
 export default function FridgeScreen() {
   const insets = useSafeAreaInsets();
@@ -101,25 +133,34 @@ export default function FridgeScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={[...items].reverse()}
-          keyExtractor={(item) => item.id}
+        <ScrollView
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <View style={styles.itemDot} />
-              <Text style={styles.itemName}>{item.name}</Text>
-              <TouchableOpacity
-                onPress={() => removeItem(item.id)}
-                style={styles.removeBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <MaterialIcons name="close" size={18} color={C.textMuted} />
-              </TouchableOpacity>
+          keyboardShouldPersistTaps="handled"
+        >
+          {groupByCategory(items).map((cat) => (
+            <View key={cat.label} style={styles.category}>
+              <View style={styles.categoryHeader}>
+                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+                <Text style={styles.categoryLabel}>{cat.label}</Text>
+                <Text style={styles.categoryCount}>{cat.items.length}</Text>
+              </View>
+              {cat.items.map((item) => (
+                <View key={item.id} style={styles.item}>
+                  <View style={styles.itemDot} />
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <TouchableOpacity
+                    onPress={() => removeItem(item.id)}
+                    style={styles.removeBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <MaterialIcons name="close" size={18} color={C.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
-          )}
-        />
+          ))}
+        </ScrollView>
       )}
 
       {/* Scan button */}
@@ -221,6 +262,36 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.lg,
+    gap: Spacing.lg,
+  },
+  category: {
+    gap: Spacing.sm,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  categoryEmoji: {
+    fontSize: 16,
+  },
+  categoryLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: C.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    flex: 1,
+  },
+  categoryCount: {
+    fontSize: FontSize.xs,
+    color: C.textMuted,
+    backgroundColor: C.surface,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: Radius.full,
+    overflow: 'hidden',
   },
   item: {
     flexDirection: 'row',

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "linear": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-linear"
+      ],
+      "env": {
+        "LINEAR_API_KEY": "REMPLACE_PAR_TA_CLE_LINEAR"
+      }
+    }
+  }
+}

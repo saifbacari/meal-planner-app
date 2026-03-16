@@ -16,7 +16,10 @@ import { ThemedView } from '@/components/themed-view';
 import { Chip } from '@/components/ui/Chip';
 import { RecipeCard } from '@/components/ui/RecipeCard';
 import { useFridge } from '@/contexts/FridgeContext';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
 import { generateRecipeSuggestions, filterRecipes, AIRecipe } from '@/lib/claude';
+import { RecipeDetailModal } from '@/components/modals/RecipeDetailModal';
 import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -44,42 +47,85 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { items: fridgeItems } = useFridge();
+  const { preferences } = usePreferences();
 
   const [selectedPhysicalState, setSelectedPhysicalState] = useState('fit');
   const [selectedCraving, setSelectedCraving] = useState('comforting');
-  const [favorited, setFavorited] = useState<Record<string, boolean>>({});
+  const { isFavorited, toggleFavorite } = useFavorites();
+  const [selectedRecipe, setSelectedRecipe] = useState<AIRecipe | null>(null);
   const [aiRecipes, setAiRecipes] = useState<AIRecipe[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
 
   const ingredients = fridgeItems.map((i) => i.name);
 
+  const prefTags = (() => {
+    const tags: { emoji: string; label: string }[] = [];
+
+    const dietLabels: Record<string, string> = {
+      vegetarian: 'Végétarien', vegan: 'Vegan', pescatarian: 'Pescétarien',
+      halal: 'Halal', kosher: 'Casher', no_pork: 'Sans porc',
+    };
+    if (preferences.diet && preferences.diet.length > 0) {
+      preferences.diet
+        .filter((d) => d !== 'omnivore')
+        .forEach((d) => tags.push({ emoji: '🥗', label: dietLabels[d] ?? d }));
+    }
+
+    const allergyLabels: Record<string, string> = {
+      gluten: 'Gluten', lactose: 'Lactose', nuts: 'Noix',
+      seafood: 'Fruits de mer', eggs: 'Œufs', soy: 'Soja', peanuts: 'Arachides',
+    };
+    if (preferences.allergies && preferences.allergies.length > 0) {
+      preferences.allergies.forEach((a) => tags.push({ emoji: '🚫', label: `Sans ${allergyLabels[a] ?? a}` }));
+    }
+
+    if (preferences.preferred_time && preferences.preferred_time !== '15-30') {
+      const timeLabels: Record<string, string> = { '5-15': '< 15 min', '30-60': '30–60 min', '60+': '> 1h' };
+      const tl = timeLabels[preferences.preferred_time];
+      if (tl) tags.push({ emoji: '⏱️', label: tl });
+    }
+
+    const goalLabels: Record<string, string> = {
+      lose_weight: 'Perte de poids', eat_healthy: 'Manger sain',
+      build_muscle: 'Prise de masse', maintain: 'Maintien',
+    };
+    if (preferences.goals && preferences.goals.length > 0) {
+      preferences.goals.forEach((g) => tags.push({ emoji: '🎯', label: goalLabels[g] ?? g }));
+    }
+
+    return tags;
+  })();
+
   const generateSuggestions = useCallback(async () => {
     if (ingredients.length === 0 || !hasApiKey) return;
     setAiLoading(true);
     setAiError('');
     try {
-      const recipes = await generateRecipeSuggestions(ingredients);
+      const recipes = await generateRecipeSuggestions(ingredients, {
+        diet: preferences.diet,
+        allergies: preferences.allergies,
+        cooking_level: preferences.cooking_level,
+        preferred_time: preferences.preferred_time,
+        goals: preferences.goals,
+      });
       setAiRecipes(recipes);
     } catch (e: unknown) {
       setAiError(e instanceof Error ? e.message : 'Erreur lors de la génération');
     } finally {
       setAiLoading(false);
     }
-  }, [ingredients.join(',')]);
+  }, [ingredients.join(','), preferences.diet?.join(','), preferences.allergies?.join(','), preferences.cooking_level, preferences.preferred_time, preferences.goals?.join(',')]);
 
-  // Auto-generate when fridge content changes
+  // Auto-generate when fridge content or preferences change
   useEffect(() => {
     if (ingredients.length === 0) {
       setAiRecipes([]);
       return;
     }
     generateSuggestions();
-  }, [ingredients.join(',')]);
+  }, [ingredients.join(','), preferences.diet?.join(','), preferences.allergies?.join(','), preferences.cooking_level, preferences.preferred_time, preferences.goals?.join(',')]);
 
-  const toggleFavorite = (id: string) => {
-    setFavorited((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
     <ThemedView style={styles.container}>
@@ -100,10 +146,6 @@ export default function DashboardScreen() {
           <MaterialIcons name="notifications" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
-
-      <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-        Basé sur les ingrédients de votre frigo
-      </Text>
 
       <ScrollView
         style={styles.content}
@@ -200,6 +242,29 @@ export default function DashboardScreen() {
             )}
           </View>
 
+          {/* Préférences actives */}
+          {prefTags.length > 0 && (
+            <View style={styles.prefTagsContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.prefTagsRow}
+                style={{ flex: 1 }}
+              >
+                <Text style={[styles.prefTagsLabel, { color: colors.textMuted }]}>Filtré selon :</Text>
+                {prefTags.map((tag, i) => (
+                  <View key={i} style={[styles.prefTag, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                    <Text style={styles.prefTagEmoji}>{tag.emoji}</Text>
+                    <Text style={[styles.prefTagText, { color: colors.textMuted }]}>{tag.label}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+              <TouchableOpacity onPress={() => router.navigate('/(tabs)/profile')} style={styles.prefEditBtn}>
+                <MaterialIcons name="edit" size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Frigo vide */}
           {ingredients.length === 0 && (
             <View style={styles.emptyState}>
@@ -261,14 +326,18 @@ export default function DashboardScreen() {
                 key={recipe.id}
                 recipe={recipe}
                 featured={index === 0}
-                onPress={() => {}}
-                onFavorite={() => toggleFavorite(recipe.id)}
-                isFavorited={favorited[recipe.id] || false}
+                onPress={() => setSelectedRecipe(recipe)}
+                onFavorite={() => toggleFavorite(recipe)}
+                isFavorited={isFavorited(recipe.id)}
               />
             ));
           })()}
         </View>
       </ScrollView>
+      <RecipeDetailModal
+        recipe={selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+      />
     </ThemedView>
   );
 }
@@ -439,6 +508,43 @@ const styles = StyleSheet.create({
   retryBtnText: {
     color: ColorPalette.error,
     fontWeight: FontWeight.medium,
+  },
+  prefTagsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    marginHorizontal: -Spacing.md,
+  },
+  prefTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+  },
+  prefTagsLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    marginRight: 2,
+  },
+  prefTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  prefTagEmoji: {
+    fontSize: 11,
+  },
+  prefTagText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  prefEditBtn: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
   },
   refineBtn: {
     flexDirection: 'row',

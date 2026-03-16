@@ -23,7 +23,22 @@ export function FridgeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (raw) setItems(JSON.parse(raw));
+      if (!raw) return;
+      const loaded: FridgeItem[] = JSON.parse(raw);
+      // Dédupliquer les ids (migration pour les anciens items créés avec Date.now() non unique)
+      const seen = new Set<string>();
+      const deduped = loaded.map((item) => {
+        if (seen.has(item.id)) {
+          return { ...item, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` };
+        }
+        seen.add(item.id);
+        return item;
+      });
+      setItems(deduped);
+      // Réécrire si des ids ont été corrigés
+      if (deduped.some((item, i) => item.id !== loaded[i].id)) {
+        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+      }
     });
   }, []);
 
@@ -35,8 +50,12 @@ export function FridgeProvider({ children }: { children: ReactNode }) {
   const addItem = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (items.some((i) => i.name.toLowerCase() === trimmed.toLowerCase())) return;
-    persist([...items, { id: Date.now().toString(), name: trimmed, addedAt: Date.now() }]);
+    setItems((prev) => {
+      if (prev.some((i) => i.name.toLowerCase() === trimmed.toLowerCase())) return prev;
+      const newItems = [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, name: trimmed, addedAt: Date.now() }];
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+      return newItems;
+    });
   };
 
   const removeItem = (id: string) => persist(items.filter((i) => i.id !== id));

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -51,6 +51,15 @@ export function AddIngredientsModal({
 
   const [ingredients, setIngredients] = useState<string[]>(currentIngredients);
   const [searchText, setSearchText] = useState('');
+
+  // Synchronize modal state with parent ingredients & reset on close
+  useEffect(() => {
+    if (visible) {
+      // When modal opens, sync with current ingredients
+      setIngredients(currentIngredients);
+      setSearchText('');
+    }
+  }, [visible, currentIngredients]);
 
   const toggleIngredient = (ingredient: string) => {
     setIngredients((prev) =>
