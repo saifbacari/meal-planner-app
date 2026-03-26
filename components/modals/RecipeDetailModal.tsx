@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +14,8 @@ import { AIRecipe, generateRecipeSteps } from '@/lib/claude';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useFridge } from '@/contexts/FridgeContext';
 import { Badge } from '@/components/ui/Badge';
-import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
+import { SkeletonSteps } from '@/components/ui/SkeletonCard';
+import { Colors, ColorPalette, Spacing, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
 
@@ -103,12 +103,7 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Préparation</Text>
 
-            {stepsLoading && (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator color={ColorPalette.primary} size="small" />
-                <Text style={styles.loadingText}>Génération des étapes...</Text>
-              </View>
-            )}
+            {stepsLoading && <SkeletonSteps />}
 
             {stepsError !== '' && !stepsLoading && (
               <Text style={styles.errorText}>{stepsError}</Text>
@@ -241,16 +236,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     color: C.text,
     lineHeight: 22,
-  },
-  loadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
-  },
-  loadingText: {
-    fontSize: FontSize.sm,
-    color: C.textMuted,
   },
   errorText: {
     fontSize: FontSize.sm,

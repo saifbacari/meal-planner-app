@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
-  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Chip } from '@/components/ui/Chip';
 import { RecipeCard } from '@/components/ui/RecipeCard';
+import { SkeletonCard } from '@/components/ui/SkeletonCard';
 import { useFridge } from '@/contexts/FridgeContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { usePreferences } from '@/contexts/PreferencesContext';
@@ -286,12 +286,11 @@ export default function DashboardScreen() {
 
           {/* Loading */}
           {aiLoading && (
-            <View style={styles.loadingState}>
-              <ActivityIndicator color={ColorPalette.primary} size="large" />
-              <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                L'IA compose vos recettes...
-              </Text>
-            </View>
+            <>
+              <SkeletonCard featured />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
           )}
 
           {/* Erreur */}
@@ -480,14 +479,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     fontWeight: FontWeight.semibold,
     color: '#000',
-  },
-  loadingState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.xxl,
-    gap: Spacing.md,
-  },
-  loadingText: {
-    fontSize: FontSize.sm,
   },
   errorState: {
     alignItems: 'center',
