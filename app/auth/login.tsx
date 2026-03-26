@@ -27,7 +27,7 @@ function usePasswordPeek(setter: (v: string) => void) {
     if (text.length > prevLength.current) {
       setSecure(false);
       if (timeout.current) clearTimeout(timeout.current);
-      timeout.current = setTimeout(() => setSecure(true), 600);
+      timeout.current = setTimeout(() => setSecure(true), 300);
     } else {
       if (timeout.current) clearTimeout(timeout.current);
       setSecure(true);

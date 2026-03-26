@@ -13,7 +13,7 @@ export type AIRecipe = {
 
 export async function generateRecipeSteps(
   title: string,
-  recipeIngredients: string[],
+  _recipeIngredients: string[],
   fridgeItems: string[]
 ): Promise<string[]> {
   const apiKey = process.env.EXPO_PUBLIC_CLAUDE_API_KEY;

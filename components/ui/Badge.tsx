@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Spacing, FontSize, FontWeight } from '@/constants/theme';
+import { Spacing, FontWeight } from '@/constants/theme';
 
 interface BadgeProps {
   label: string;

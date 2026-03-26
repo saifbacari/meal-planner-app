@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { TouchableOpacity, Text, ViewStyle } from 'react-native';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -49,4 +49,3 @@ export function Chip({ label, selected, onPress, icon }: ChipProps) {
   );
 }
 
-const styles = StyleSheet.create({});

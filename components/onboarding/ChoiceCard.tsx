@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;

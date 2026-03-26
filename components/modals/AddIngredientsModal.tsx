@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  FlatList,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Button } from '../ui/Button';
 

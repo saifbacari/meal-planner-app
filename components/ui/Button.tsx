@@ -1,6 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
-import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constants/theme';
+import { TouchableOpacity, Text, ViewStyle } from 'react-native';
+import { Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface ButtonProps {
@@ -85,10 +85,9 @@ export function Button({
       activeOpacity={0.7}
     >
       {icon && iconPosition === 'left' && icon}
-      <Text style={[getTextStyle(), icon && { marginLeft: Spacing.xs }]}>{label}</Text>
+      <Text style={[getTextStyle(), icon ? { marginLeft: Spacing.xs } : undefined]}>{label}</Text>
       {icon && iconPosition === 'right' && icon}
     </TouchableOpacity>
   );
 }
 
-const styles = StyleSheet.create({});
