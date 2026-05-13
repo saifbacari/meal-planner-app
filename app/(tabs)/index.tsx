@@ -108,6 +108,7 @@ export default function DashboardScreen() {
         cooking_level: preferences.cooking_level,
         preferred_time: preferences.preferred_time,
         goals: preferences.goals,
+        equipment: preferences.equipment,
       });
       setAiRecipes(recipes);
     } catch (e: unknown) {
@@ -115,7 +116,7 @@ export default function DashboardScreen() {
     } finally {
       setAiLoading(false);
     }
-  }, [ingredients.join(','), preferences.diet?.join(','), preferences.allergies?.join(','), preferences.cooking_level, preferences.preferred_time, preferences.goals?.join(',')]);
+  }, [ingredients.join(','), preferences.diet?.join(','), preferences.allergies?.join(','), preferences.cooking_level, preferences.preferred_time, preferences.goals?.join(','), preferences.equipment?.join(',')]);
 
   // Auto-generate when fridge content or preferences change
   useEffect(() => {
@@ -124,7 +125,7 @@ export default function DashboardScreen() {
       return;
     }
     generateSuggestions();
-  }, [ingredients.join(','), preferences.diet?.join(','), preferences.allergies?.join(','), preferences.cooking_level, preferences.preferred_time, preferences.goals?.join(',')]);
+  }, [ingredients.join(','), preferences.diet?.join(','), preferences.allergies?.join(','), preferences.cooking_level, preferences.preferred_time, preferences.goals?.join(','), preferences.equipment?.join(',')]);
 
 
   return (

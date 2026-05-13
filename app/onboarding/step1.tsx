@@ -33,7 +33,7 @@ export default function Step1() {
   return (
     <OnboardingLayout
       step={1}
-      total={4}
+      total={5}
       title="Quel est ton objectif ?"
       subtitle="Choisis tout ce qui te correspond. On adaptera les suggestions en conséquence."
       onNext={handleNext}

@@ -91,10 +91,23 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
           {/* Ingredients */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ingrédients</Text>
+            {recipe.ingredients.some((i) => !i.available) && (
+              <View style={styles.missingBanner}>
+                <MaterialIcons name="shopping-cart" size={14} color="#f97316" />
+                <Text style={styles.missingBannerText}>
+                  Les ingrédients en orange sont à acheter
+                </Text>
+              </View>
+            )}
             {recipe.ingredients.map((ingredient, i) => (
               <View key={i} style={styles.ingredientRow}>
-                <View style={styles.dot} />
-                <Text style={styles.ingredientText}>{ingredient}</Text>
+                <View style={[styles.dot, !ingredient.available && styles.dotMissing]} />
+                <Text style={[styles.ingredientText, !ingredient.available && styles.ingredientMissing]}>
+                  {ingredient.name}
+                </Text>
+                {!ingredient.available && (
+                  <MaterialIcons name="add-shopping-cart" size={16} color="#f97316" />
+                )}
               </View>
             ))}
           </View>
@@ -207,9 +220,31 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: ColorPalette.primary,
   },
+  dotMissing: {
+    backgroundColor: '#f97316',
+  },
   ingredientText: {
+    flex: 1,
     fontSize: FontSize.base,
     color: C.text,
+  },
+  ingredientMissing: {
+    color: '#f97316',
+  },
+  missingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+    borderRadius: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  missingBannerText: {
+    fontSize: FontSize.xs,
+    color: '#f97316',
+    fontWeight: FontWeight.medium,
   },
   stepRow: {
     flexDirection: 'row',

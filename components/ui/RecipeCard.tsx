@@ -5,6 +5,7 @@ import { Colors, Spacing, Radius, FontSize, FontWeight, Shadow } from '@/constan
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Badge } from './Badge';
 import { MaterialIcons } from '@expo/vector-icons';
+import { RecipeIngredient } from '@/lib/claude';
 
 interface Recipe {
   id: string;
@@ -12,7 +13,7 @@ interface Recipe {
   image: string;
   category: string;
   categoryColor?: 'primary' | 'success' | 'warning' | 'error' | 'info';
-  ingredients: string[];
+  ingredients: RecipeIngredient[];
   time: number;
   calories: number;
   featured?: boolean;
@@ -78,7 +79,7 @@ export function RecipeCard({
             <Text style={[styles.title, { color: colors.text }]}>{recipe.title}</Text>
 
             <Text style={[styles.ingredients, { color: colors.textMuted }]}>
-              {recipe.ingredients.join(', ')}
+              {recipe.ingredients.map((i) => i.name).join(', ')}
             </Text>
 
             <View style={styles.stats}>
@@ -95,6 +96,15 @@ export function RecipeCard({
                   {recipe.calories} kcal
                 </Text>
               </View>
+
+              {recipe.ingredients.some((i) => !i.available) && (
+                <View style={styles.stat}>
+                  <MaterialIcons name="shopping-cart" size={14} color="#f97316" />
+                  <Text style={[styles.statText, { color: '#f97316' }]}>
+                    {recipe.ingredients.filter((i) => !i.available).length} à acheter
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -147,7 +157,7 @@ export function RecipeCard({
           </View>
 
           <Text style={[styles.ingredients, { color: colors.textMuted }]} numberOfLines={1}>
-            {recipe.ingredients.join(', ')}
+            {recipe.ingredients.map((i) => i.name).join(', ')}
           </Text>
 
           <View style={styles.stats}>
@@ -164,6 +174,15 @@ export function RecipeCard({
                 {recipe.calories} kcal
               </Text>
             </View>
+
+            {recipe.ingredients.some((i) => !i.available) && (
+              <View style={styles.stat}>
+                <MaterialIcons name="shopping-cart" size={12} color="#f97316" />
+                <Text style={[styles.statText, { color: '#f97316' }]}>
+                  {recipe.ingredients.filter((i) => !i.available).length} à acheter
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </View>

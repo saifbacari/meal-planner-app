@@ -1,10 +1,15 @@
+export type RecipeIngredient = {
+  name: string;
+  available: boolean;
+};
+
 export type AIRecipe = {
   id: string;
   title: string;
   image: string;
   category: string;
   categoryColor: 'primary' | 'success' | 'warning' | 'error' | 'info';
-  ingredients: string[];
+  ingredients: RecipeIngredient[];
   time: number;
   calories: number;
   physicalState: string[];
@@ -13,17 +18,19 @@ export type AIRecipe = {
 
 export async function generateRecipeSteps(
   title: string,
-  _recipeIngredients: string[],
-  fridgeItems: string[]
+  recipeIngredients: RecipeIngredient[],
+  _fridgeItems: string[]
 ): Promise<string[]> {
   const apiKey = process.env.EXPO_PUBLIC_CLAUDE_API_KEY;
 
+  const ingredientNames = recipeIngredients.map((i) => i.name).join(', ');
+
   const prompt = `Recette : "${title}"
-Ingrédients disponibles dans le frigo : ${fridgeItems.join(', ')}
+Ingrédients de la recette : ${ingredientNames}
 Basiques toujours disponibles : sel, poivre, huile d'olive, eau, vinaigre
 
-Donne les étapes de préparation en utilisant UNIQUEMENT ces ingrédients.
-5 à 8 étapes courtes et précises, dans le bon ordre logique.
+Donne les étapes de préparation de cette recette en utilisant ces ingrédients.
+5 à 8 étapes courtes et précises, dans le bon ordre logique culinaire.
 
 Réponds UNIQUEMENT avec un tableau JSON de strings :
 ["Étape 1...", "Étape 2...", ...]`;
@@ -72,6 +79,7 @@ export type RecipePreferences = {
   cooking_level?: string;
   preferred_time?: string;
   goals?: string[];
+  equipment?: string[];
 };
 
 export async function generateRecipeSuggestions(
@@ -102,22 +110,29 @@ export async function generateRecipeSuggestions(
     const goalStr = preferences.goals.map((g) => goalLabels[g] ?? g).join(', ');
     prefLines.push(`- Objectifs nutritionnels : ${goalStr}`);
   }
+  if (preferences?.equipment !== undefined) {
+    const equipmentLabels: Record<string, string> = {
+      oven: 'four', microwave: 'micro-ondes', air_fryer: 'air fryer',
+      blender: 'mixeur/blender', steamer: 'cuiseur vapeur', pressure_cooker: 'cocotte-minute',
+    };
+    const available = ['poêle', 'casserole', ...preferences.equipment.map((e) => equipmentLabels[e] ?? e)];
+    prefLines.push(`- Équipement disponible : ${available.join(', ')} — ne propose QUE des recettes réalisables avec cet équipement`);
+  }
 
   const prefSection = prefLines.length > 0
     ? `\n\nPréférences de l'utilisateur à respecter ABSOLUMENT :\n${prefLines.join('\n')}`
     : '';
 
-  const prompt = `Tu es un chef cuisinier expert. L'utilisateur a EXACTEMENT ces ingrédients disponibles : ${fridgeItems.join(', ')}.
+  const prompt = `Tu es un chef cuisinier expert. L'utilisateur a ces ingrédients dans son frigo : ${fridgeItems.join(', ')}.
 Les basiques toujours disponibles : sel, poivre, huile d'olive, eau, vinaigre.${prefSection}
 
-Propose entre 5 et 8 recettes réelles et connues, réalisables avec ces ingrédients.
+Propose entre 5 et 8 vraies recettes cohérentes et savoureuses, en priorité celles qui utilisent un maximum d'ingrédients du frigo.
+Tu peux aussi proposer des recettes qui nécessitent des ingrédients supplémentaires non disponibles — dans ce cas liste TOUS les ingrédients nécessaires à la recette, même ceux absents du frigo.
 
-Règles STRICTES anti-hallucination :
-- Chaque recette doit être une vraie recette qui existe (pas une invention absurde)
-- Les ingrédients listés dans chaque recette doivent être un sous-ensemble des ingrédients disponibles + les basiques
-- N'ajoute PAS d'ingrédients qui ne sont pas dans la liste
-- Si les ingrédients disponibles ne permettent pas 8 recettes cohérentes, propose-en moins
-- Les temps et calories doivent être réalistes pour la recette proposée
+Règles :
+- Chaque recette doit être une vraie recette qui existe et qui a du sens culinaire
+- Les ingrédients doivent être ceux RÉELLEMENT nécessaires pour la recette (pas d'invention)
+- Les temps et calories doivent être réalistes
 - Variété : couvre différents profils (rapide, réconfortant, léger, épicé)
 
 Réponds UNIQUEMENT avec un tableau JSON valide, sans texte avant ni après :
@@ -175,21 +190,32 @@ Règles STRICTES de cohérence état physique / temps de préparation :
   if (!jsonMatch) throw new Error('Format de réponse invalide');
 
   const recipes = JSON.parse(jsonMatch[0]);
-  return recipes.map((r: Omit<AIRecipe, 'id' | 'image'>, index: number) => {
+  const fridgeLower = fridgeItems.map((i) => i.toLowerCase());
+  const BASICS = ['sel', 'poivre', "huile d'olive", 'eau', 'vinaigre'];
+
+  return recipes.map((r: Omit<AIRecipe, 'id' | 'image'> & { ingredients: string[] }, index: number) => {
     const time: number = r.time ?? 30;
     let physicalState: string[] = r.physicalState ?? [];
-    // Filet de sécurité : retirer les états incohérents avec le temps réel
     if (time > 20) physicalState = physicalState.filter((s) => s !== 'tired');
     if (time > 15) physicalState = physicalState.filter((s) => s !== 'sleep');
     if (time > 30) physicalState = physicalState.filter((s) => s !== 'post_sport');
-    // Toujours au moins un état
     if (physicalState.length === 0) physicalState = ['fit'];
+
+    const ingredients: RecipeIngredient[] = (r.ingredients ?? []).map((name: string) => {
+      const nameLower = name.toLowerCase();
+      const available =
+        BASICS.some((b) => nameLower.includes(b)) ||
+        fridgeLower.some((f) => f.includes(nameLower) || nameLower.includes(f));
+      return { name, available };
+    });
+
     return {
       ...r,
       id: `ai-${Date.now()}-${index}`,
       image: '',
       physicalState,
       craving: r.craving ?? [],
+      ingredients,
     };
   });
 }

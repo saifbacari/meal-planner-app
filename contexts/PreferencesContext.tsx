@@ -10,6 +10,7 @@ export type UserPreferences = {
   cooking_level: string;
   preferred_time: string;
   frequent_ingredients: string[];
+  equipment: string[];
   onboarding_completed: boolean;
 };
 
@@ -20,6 +21,7 @@ const DEFAULT_PREFS: UserPreferences = {
   cooking_level: 'intermediate',
   preferred_time: '15-30',
   frequent_ingredients: [],
+  equipment: [],
   onboarding_completed: false,
 };
 
@@ -73,6 +75,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
           cooking_level: data.cooking_level ?? 'intermediate',
           preferred_time: data.preferred_time ?? '15-30',
           frequent_ingredients: data.frequent_ingredients ?? [],
+          equipment: data.equipment ?? [],
           onboarding_completed: data.onboarding_completed ?? false,
         };
         setPreferences(prefs);

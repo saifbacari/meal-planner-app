@@ -152,6 +152,8 @@ setItems([...items, newItem]);        // ❌ stale closure
 - Objectifs : `lose_weight` · `eat_healthy` · `build_muscle` · `maintain`
 - Régimes : `omnivore` · `vegetarian` · `vegan` · `pescatarian` · `halal` · `kosher` · `no_pork`
 - Allergies : `gluten` · `lactose` · `nuts` · `seafood` · `eggs` · `soy` · `peanuts`
+- Équipement : `oven` · `microwave` · `air_fryer` · `blender` · `steamer` · `pressure_cooker`
+  (poêle et casserole = toujours disponibles, pas dans la liste)
 
 ---
 
@@ -166,6 +168,7 @@ allergies text[] default '{}',
 cooking_level text default 'intermediate',
 preferred_time text default '15-30',
 frequent_ingredients text[] default '{}',
+equipment text[] default '{}',
 onboarding_completed boolean default false,
 updated_at timestamptz default now()
 ```
@@ -189,17 +192,19 @@ updated_at timestamptz default now()
 
 ---
 
-## État du projet (2026-03-16)
+## État du projet (2026-05-13)
 
 ### ✅ Implémenté
 - Auth (login/signup/logout/delete account)
-- Onboarding 4 étapes + welcome + finish
+- Onboarding 5 étapes + welcome + finish (step5 = équipement cuisine)
 - Dashboard avec suggestions IA + filtres mood
 - Frigo avec catégories + scan code-barre
-- Favoris
+- Favoris (stockage par user : `@favorites_${userId}`)
 - Profil
-- Préférences alimentaires injectées dans les suggestions Claude
+- Préférences injectées dans le prompt Claude (régime, allergies, objectifs, niveau, temps, équipement)
 - Pills "Filtré selon" sur le dashboard
+- Ingrédients manquants mis en valeur (orange + icône panier) sur RecipeCard et RecipeDetailModal
+- Storage frigo et favoris isolés par utilisateur (`@fridge_items_${userId}`)
 
 ### 🔜 Backlog (Linear)
 - REC-6 : Skeleton loaders

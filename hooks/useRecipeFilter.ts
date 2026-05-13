@@ -6,7 +6,7 @@ interface Recipe {
   image: string;
   category: string;
   categoryColor?: 'primary' | 'success' | 'warning' | 'error' | 'info';
-  ingredients: string[];
+  ingredients: { name: string; available: boolean }[];
   time: number;
   calories: number;
   featured?: boolean;
@@ -35,7 +35,7 @@ export function useRecipeFilter(
       // Filter by ingredients (if any are selected)
       if (ingredients.length > 0) {
         const hasAllIngredients = ingredients.every((ing) =>
-          recipe.ingredients.some((recIng) => recIng.toLowerCase().includes(ing.toLowerCase()))
+          recipe.ingredients.some((recIng) => recIng.name.toLowerCase().includes(ing.toLowerCase()))
         );
         if (!hasAllIngredients) {
           return false;

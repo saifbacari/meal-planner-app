@@ -102,19 +102,18 @@ export default function Step4() {
     // Pré-remplir le frigo ici directement (pas via draft pour éviter les problèmes de timing)
     selectedIngredients.forEach((name) => addItem(name));
     updateDraft({ frequent_ingredients: selectedIngredients });
-    router.push('/onboarding/finish');
+    router.push('/onboarding/step5');
   };
 
   return (
     <OnboardingLayout
       step={4}
-      total={4}
+      total={5}
       title="Tes ingrédients du quotidien"
       subtitle="Sélectionne ce que tu as presque toujours. On pré-remplit ton frigo."
       onNext={handleFinish}
-      nextLabel="Commencer !"
       canNext
-      showSkip={false}
+      showSkip
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {INGREDIENT_CATEGORIES.map((category) => (

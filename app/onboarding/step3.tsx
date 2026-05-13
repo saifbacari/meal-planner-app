@@ -37,7 +37,7 @@ export default function Step3() {
   return (
     <OnboardingLayout
       step={3}
-      total={4}
+      total={5}
       title="Ton style en cuisine"
       subtitle="On s'adapte à ton niveau et au temps dont tu disposes."
       onNext={handleNext}

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AIRecipe } from '@/lib/claude';
+import { useAuth } from '@/contexts/AuthContext';
 
 type FavoritesContextType = {
   favorites: AIRecipe[];
@@ -10,20 +11,27 @@ type FavoritesContextType = {
 
 const FavoritesContext = createContext<FavoritesContextType | null>(null);
 
-const STORAGE_KEY = '@favorites';
+const storageKey = (userId: string) => `@favorites_${userId}`;
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [favorites, setFavorites] = useState<AIRecipe[]>([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+    if (!user) {
+      setFavorites([]);
+      return;
+    }
+    AsyncStorage.getItem(storageKey(user.id)).then((raw) => {
       if (raw) setFavorites(JSON.parse(raw));
+      else setFavorites([]);
     });
-  }, []);
+  }, [user?.id]);
 
   const persist = (items: AIRecipe[]) => {
+    if (!user) return;
     setFavorites(items);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    AsyncStorage.setItem(storageKey(user.id), JSON.stringify(items));
   };
 
   const isFavorited = (id: string) => favorites.some((r) => r.id === id);

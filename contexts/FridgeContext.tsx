@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type FridgeItem = {
   id: string;
@@ -16,14 +17,22 @@ type FridgeContextType = {
 
 const FridgeContext = createContext<FridgeContextType | null>(null);
 
-const STORAGE_KEY = '@fridge_items';
+const storageKey = (userId: string) => `@fridge_items_${userId}`;
 
 export function FridgeProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<FridgeItem[]>([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (!raw) return;
+    if (!user) {
+      setItems([]);
+      return;
+    }
+    AsyncStorage.getItem(storageKey(user.id)).then((raw) => {
+      if (!raw) {
+        setItems([]);
+        return;
+      }
       const loaded: FridgeItem[] = JSON.parse(raw);
       // Dédupliquer les ids (migration pour les anciens items créés avec Date.now() non unique)
       const seen = new Set<string>();
@@ -37,23 +46,25 @@ export function FridgeProvider({ children }: { children: ReactNode }) {
       setItems(deduped);
       // Réécrire si des ids ont été corrigés
       if (deduped.some((item, i) => item.id !== loaded[i].id)) {
-        AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+        AsyncStorage.setItem(storageKey(user.id), JSON.stringify(deduped));
       }
     });
-  }, []);
+  }, [user?.id]);
 
   const persist = (newItems: FridgeItem[]) => {
+    if (!user) return;
     setItems(newItems);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+    AsyncStorage.setItem(storageKey(user.id), JSON.stringify(newItems));
   };
 
   const addItem = (name: string) => {
+    if (!user) return;
     const trimmed = name.trim();
     if (!trimmed) return;
     setItems((prev) => {
       if (prev.some((i) => i.name.toLowerCase() === trimmed.toLowerCase())) return prev;
       const newItems = [...prev, { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, name: trimmed, addedAt: Date.now() }];
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
+      AsyncStorage.setItem(storageKey(user.id), JSON.stringify(newItems));
       return newItems;
     });
   };

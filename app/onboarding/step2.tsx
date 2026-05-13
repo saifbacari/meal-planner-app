@@ -55,7 +55,7 @@ export default function Step2() {
   return (
     <OnboardingLayout
       step={2}
-      total={4}
+      total={5}
       title="Ton régime & tes allergies"
       subtitle="Ces informations guident chaque suggestion de recette."
       onNext={handleNext}
