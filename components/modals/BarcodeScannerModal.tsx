@@ -39,9 +39,13 @@ export function BarcodeScannerModal({ visible, onClose, onProductFound }: Props)
     if (scanState !== 'scanning') return;
     setScanState('loading');
 
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+
     try {
       const res = await fetch(
-        `https://world.openfoodfacts.org/api/v0/product/${data}.json`
+        `https://world.openfoodfacts.org/api/v0/product/${data}.json`,
+        { signal: controller.signal }
       );
       const json = await res.json();
 
@@ -63,9 +67,12 @@ export function BarcodeScannerModal({ visible, onClose, onProductFound }: Props)
         setErrorMsg('Produit non reconnu dans la base.');
         setScanState('error');
       }
-    } catch {
-      setErrorMsg('Erreur réseau. Réessayez.');
+    } catch (e: unknown) {
+      const isTimeout = e instanceof Error && e.name === 'AbortError';
+      setErrorMsg(isTimeout ? 'Délai dépassé. Réessayez.' : 'Erreur réseau. Réessayez.');
       setScanState('error');
+    } finally {
+      clearTimeout(timer);
     }
   };
 

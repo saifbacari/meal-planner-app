@@ -15,7 +15,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { useFridge } from '@/contexts/FridgeContext';
 import { Badge } from '@/components/ui/Badge';
 import { SkeletonSteps } from '@/components/ui/SkeletonCard';
-import { Colors, ColorPalette, Spacing, FontSize, FontWeight } from '@/constants/theme';
+import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
 
@@ -119,7 +119,23 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
             {stepsLoading && <SkeletonSteps />}
 
             {stepsError !== '' && !stepsLoading && (
-              <Text style={styles.errorText}>{stepsError}</Text>
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>Impossible de charger les étapes.</Text>
+                <TouchableOpacity
+                  style={styles.retryBtn}
+                  onPress={() => {
+                    setStepsError('');
+                    setStepsLoading(true);
+                    generateRecipeSteps(recipe.title, recipe.ingredients, fridgeItems.map(i => i.name))
+                      .then(setSteps)
+                      .catch((e) => setStepsError(e.message))
+                      .finally(() => setStepsLoading(false));
+                  }}
+                >
+                  <MaterialIcons name="refresh" size={16} color="#000" />
+                  <Text style={styles.retryText}>Réessayer</Text>
+                </TouchableOpacity>
+              </View>
             )}
 
             {steps.map((step, i) => (
@@ -272,8 +288,26 @@ const styles = StyleSheet.create({
     color: C.text,
     lineHeight: 22,
   },
+  errorContainer: {
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+  },
   errorText: {
     fontSize: FontSize.sm,
     color: ColorPalette.error,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: ColorPalette.primary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.sm,
+  },
+  retryText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: '#000',
   },
 });
