@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
+  RefreshControl,
   View,
   Text,
   StyleSheet,
@@ -152,6 +153,14 @@ export default function DashboardScreen() {
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={aiLoading}
+            onRefresh={generateSuggestions}
+            tintColor={ColorPalette.primary}
+            colors={[ColorPalette.primary]}
+          />
+        }
       >
         {/* Frigo Section */}
         <View style={[styles.section, { marginTop: Spacing.md }]}>
