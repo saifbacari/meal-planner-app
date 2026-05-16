@@ -26,6 +26,7 @@ const FOOD_SUGGESTIONS = [
   'pomme', 'poire', 'banane', 'orange', 'citron', 'citron vert', 'fraise', 'framboise',
   'myrtille', 'cerise', 'raisin', 'mangue', 'ananas', 'kiwi', 'pêche', 'abricot',
   'prune', 'melon', 'pastèque', 'avocat', 'figue', 'grenade', 'papaye', 'litchi',
+  'clémentine', 'mandarine', 'pamplemousse', 'nectarine',
   // Légumes
   'tomate', 'carotte', 'pomme de terre', 'oignon', 'oignon rouge', 'ail', 'courgette',
   'aubergine', 'poivron rouge', 'poivron vert', 'poivron jaune', 'brocoli', 'chou-fleur',
@@ -211,14 +212,11 @@ export default function FridgeScreen() {
 
   const suggestions = useMemo(() => {
     const q = inputValue.trim();
-    if (q.length < 1) return [];
+    if (q.length < 2) return [];
     const qn = normalize(q);
     const inFridge = new Set(items.map((i) => normalize(i.name)));
-    const matches = q.length === 1
-      ? (s: string) => normalize(s).startsWith(qn)
-      : (s: string) => normalize(s).includes(qn);
     return FOOD_SUGGESTIONS.filter(
-      (s) => matches(s) && !inFridge.has(normalize(s))
+      (s) => normalize(s).includes(qn) && !inFridge.has(normalize(s))
     ).slice(0, 6);
   }, [inputValue, items]);
 
