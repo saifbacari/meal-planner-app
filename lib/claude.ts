@@ -16,24 +16,47 @@ export type AIRecipe = {
   craving: string[];
 };
 
+export type RecipeStep = {
+  action: string;
+  duration?: string;
+};
+
+export type RecipeDetails = {
+  servings: number;
+  equipment: string[];
+  steps: RecipeStep[];
+};
+
 export async function generateRecipeSteps(
   title: string,
   recipeIngredients: RecipeIngredient[],
   _fridgeItems: string[]
-): Promise<string[]> {
+): Promise<RecipeDetails> {
   const apiKey = process.env.EXPO_PUBLIC_CLAUDE_API_KEY;
 
   const ingredientNames = recipeIngredients.map((i) => i.name).join(', ');
 
   const prompt = `Recette : "${title}"
-Ingrédients de la recette : ${ingredientNames}
-Basiques toujours disponibles : sel, poivre, huile d'olive, eau, vinaigre
+Ingrédients : ${ingredientNames}
+Basiques disponibles : sel, poivre, huile d'olive, eau, vinaigre
 
-Donne les étapes de préparation de cette recette en utilisant ces ingrédients.
-5 à 8 étapes courtes et précises, dans le bon ordre logique culinaire.
+Génère les détails structurés de cette recette.
 
-Réponds UNIQUEMENT avec un tableau JSON de strings :
-["Étape 1...", "Étape 2...", ...]`;
+Règles IMPORTANTES :
+- "equipment" : liste uniquement les ustensiles RÉELLEMENT utilisés (poêle, casserole, couteau, etc.). Ne pas lister la poêle/casserole si elles ne sont pas utilisées.
+- "steps.action" : l'action culinaire PURE, sans mentionner la durée dans le texte (ex: "Faire revenir l'oignon jusqu'à ce qu'il soit translucide" — pas "pendant 2-3 min")
+- "steps.duration" : la durée en string court si pertinente (ex: "2-3 min", "35 min"), null sinon
+- 5 à 8 étapes dans l'ordre logique culinaire
+
+Réponds UNIQUEMENT avec cet objet JSON :
+{
+  "servings": 2,
+  "equipment": ["poêle", "couteau", "planche à découper"],
+  "steps": [
+    { "action": "...", "duration": "X min" },
+    { "action": "...", "duration": null }
+  ]
+}`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -44,9 +67,9 @@ Réponds UNIQUEMENT avec un tableau JSON de strings :
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
+      max_tokens: 800,
       temperature: 0.2,
-      system: "Tu es un chef cuisinier qui génère des recettes RÉALISTES. Tu n'inventes JAMAIS d'ingrédients. Tu utilises UNIQUEMENT ce qui est listé. Si un ingrédient manque pour une étape, tu l'adaptes avec ce qui est disponible.",
+      system: "Tu es un chef cuisinier rigoureux. Tu génères des détails de recettes structurés en JSON. Tu n'inventes JAMAIS d'ingrédients. Les étapes sont des actions pures, la durée est séparée.",
       messages: [{ role: 'user', content: prompt }],
     }),
   });
@@ -58,9 +81,17 @@ Réponds UNIQUEMENT avec un tableau JSON de strings :
 
   const data = await response.json();
   const text: string = data.content[0].text;
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Format invalide');
-  return JSON.parse(jsonMatch[0]);
+  const parsed = JSON.parse(jsonMatch[0]);
+  return {
+    servings: parsed.servings ?? 2,
+    equipment: parsed.equipment ?? [],
+    steps: (parsed.steps ?? []).map((s: { action: string; duration?: string | null }) => ({
+      action: s.action,
+      duration: s.duration ?? undefined,
+    })),
+  };
 }
 
 export function filterRecipes(

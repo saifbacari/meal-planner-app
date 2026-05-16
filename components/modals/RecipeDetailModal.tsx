@@ -10,7 +10,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AIRecipe, generateRecipeSteps } from '@/lib/claude';
+import { AIRecipe, RecipeDetails, generateRecipeSteps } from '@/lib/claude';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useFridge } from '@/contexts/FridgeContext';
 import { Badge } from '@/components/ui/Badge';
@@ -18,6 +18,31 @@ import { SkeletonSteps } from '@/components/ui/SkeletonCard';
 import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
+
+const EQUIPMENT_EMOJI: Record<string, string> = {
+  'poêle': '🍳',
+  'casserole': '🫕',
+  'couteau': '🔪',
+  'planche à découper': '🪵',
+  'mixeur': '🌀',
+  'blender': '🌀',
+  'four': '🔥',
+  'bol': '🥣',
+  'saladier': '🥣',
+  'fouet': '🥄',
+  'spatule': '🥄',
+  'passoire': '🧺',
+  'plat': '🫙',
+  'wok': '🍳',
+  'cocotte': '🫕',
+};
+
+function equipmentEmoji(name: string): string {
+  const key = Object.keys(EQUIPMENT_EMOJI).find((k) =>
+    name.toLowerCase().includes(k)
+  );
+  return key ? EQUIPMENT_EMOJI[key] : '🔧';
+}
 
 type Props = {
   recipe: AIRecipe | null;
@@ -28,19 +53,23 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const { isFavorited, toggleFavorite } = useFavorites();
   const { items: fridgeItems } = useFridge();
-  const [steps, setSteps] = useState<string[]>([]);
-  const [stepsLoading, setStepsLoading] = useState(false);
-  const [stepsError, setStepsError] = useState('');
+  const [details, setDetails] = useState<RecipeDetails | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadDetails = () => {
+    if (!recipe) return;
+    setDetails(null);
+    setError('');
+    setLoading(true);
+    generateRecipeSteps(recipe.title, recipe.ingredients, fridgeItems.map(i => i.name))
+      .then(setDetails)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    if (!recipe) return;
-    setSteps([]);
-    setStepsError('');
-    setStepsLoading(true);
-    generateRecipeSteps(recipe.title, recipe.ingredients, fridgeItems.map(i => i.name))
-      .then(setSteps)
-      .catch((e) => setStepsError(e.message))
-      .finally(() => setStepsLoading(false));
+    loadDetails();
   }, [recipe?.id]);
 
   if (!recipe) return null;
@@ -68,25 +97,46 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
 
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-          {/* Hero placeholder */}
+          {/* Hero */}
           <View style={styles.hero}>
             <Text style={styles.heroEmoji}>🍽️</Text>
           </View>
 
-          {/* Meta */}
-          <View style={styles.meta}>
+          {/* Meta bar */}
+          <View style={styles.metaBar}>
             <Badge label={recipe.category} variant={recipe.categoryColor || 'primary'} />
-            <View style={styles.stats}>
-              <View style={styles.stat}>
-                <MaterialIcons name="schedule" size={16} color={C.textMuted} />
-                <Text style={styles.statText}>{recipe.time} min</Text>
+            <View style={styles.metaChips}>
+              <View style={styles.metaChip}>
+                <MaterialIcons name="schedule" size={14} color={C.textMuted} />
+                <Text style={styles.metaChipText}>{recipe.time} min</Text>
               </View>
-              <View style={styles.stat}>
-                <MaterialIcons name="whatshot" size={16} color={C.textMuted} />
-                <Text style={styles.statText}>{recipe.calories} kcal</Text>
+              <View style={styles.metaChip}>
+                <MaterialIcons name="whatshot" size={14} color={C.textMuted} />
+                <Text style={styles.metaChipText}>{recipe.calories} kcal</Text>
               </View>
+              {details && (
+                <View style={styles.metaChip}>
+                  <MaterialIcons name="people" size={14} color={C.textMuted} />
+                  <Text style={styles.metaChipText}>{details.servings} pers.</Text>
+                </View>
+              )}
             </View>
           </View>
+
+          {/* Equipment */}
+          {details && details.equipment.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Ustensiles</Text>
+              <View style={styles.equipmentRow}>
+                {details.equipment.map((item) => (
+                  <View key={item} style={styles.equipmentChip}>
+                    <Text style={styles.equipmentEmoji}>{equipmentEmoji(item)}</Text>
+                    <Text style={styles.equipmentText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* Ingredients */}
           <View style={styles.section}>
@@ -116,34 +166,32 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Préparation</Text>
 
-            {stepsLoading && <SkeletonSteps />}
+            {loading && <SkeletonSteps />}
 
-            {stepsError !== '' && !stepsLoading && (
+            {error !== '' && !loading && (
               <View style={styles.errorContainer}>
                 <Text style={styles.errorText}>Impossible de charger les étapes.</Text>
-                <TouchableOpacity
-                  style={styles.retryBtn}
-                  onPress={() => {
-                    setStepsError('');
-                    setStepsLoading(true);
-                    generateRecipeSteps(recipe.title, recipe.ingredients, fridgeItems.map(i => i.name))
-                      .then(setSteps)
-                      .catch((e) => setStepsError(e.message))
-                      .finally(() => setStepsLoading(false));
-                  }}
-                >
+                <TouchableOpacity style={styles.retryBtn} onPress={loadDetails}>
                   <MaterialIcons name="refresh" size={16} color="#000" />
                   <Text style={styles.retryText}>Réessayer</Text>
                 </TouchableOpacity>
               </View>
             )}
 
-            {steps.map((step, i) => (
-              <View key={i} style={styles.stepRow}>
-                <View style={styles.stepNumber}>
-                  <Text style={styles.stepNumberText}>{i + 1}</Text>
+            {details?.steps.map((step, i) => (
+              <View key={i} style={styles.stepCard}>
+                <View style={styles.stepHeader}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>{i + 1}</Text>
+                  </View>
+                  {step.duration && (
+                    <View style={styles.durationChip}>
+                      <MaterialIcons name="schedule" size={11} color={ColorPalette.primary} />
+                      <Text style={styles.durationText}>{step.duration}</Text>
+                    </View>
+                  )}
                 </View>
-                <Text style={styles.stepText}>{step}</Text>
+                <Text style={styles.stepText}>{step.action}</Text>
               </View>
             ))}
           </View>
@@ -182,32 +230,38 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
   },
   hero: {
-    height: 200,
+    height: 180,
     backgroundColor: 'rgba(19, 236, 91, 0.06)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   heroEmoji: {
-    fontSize: 80,
+    fontSize: 72,
   },
-  meta: {
+  metaBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: C.border,
   },
-  stats: {
+  metaChips: {
     flexDirection: 'row',
-    gap: Spacing.lg,
+    gap: Spacing.sm,
   },
-  stat: {
+  metaChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 4,
+    backgroundColor: C.surface,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: Radius.full,
   },
-  statText: {
-    fontSize: FontSize.sm,
+  metaChipText: {
+    fontSize: FontSize.xs,
     color: C.textMuted,
     fontWeight: FontWeight.medium,
   },
@@ -217,10 +271,36 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   sectionTitle: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.base,
     fontWeight: FontWeight.bold,
+    color: C.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.xs,
+  },
+  equipmentRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  equipmentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+  },
+  equipmentEmoji: {
+    fontSize: 14,
+  },
+  equipmentText: {
+    fontSize: FontSize.sm,
     color: C.text,
-    marginBottom: Spacing.sm,
+    fontWeight: FontWeight.medium,
   },
   ingredientRow: {
     flexDirection: 'row',
@@ -252,38 +332,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs,
     backgroundColor: 'rgba(249, 115, 22, 0.1)',
-    borderRadius: 8,
+    borderRadius: Radius.sm,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   missingBannerText: {
     fontSize: FontSize.xs,
     color: '#f97316',
     fontWeight: FontWeight.medium,
   },
-  stepRow: {
+  stepCard: {
+    backgroundColor: C.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  stepHeader: {
     flexDirection: 'row',
-    gap: Spacing.md,
-    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: ColorPalette.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    flexShrink: 0,
-    marginTop: 2,
   },
   stepNumberText: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
     color: '#000',
   },
+  durationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(19, 236, 91, 0.1)',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+  durationText: {
+    fontSize: FontSize.xs,
+    color: ColorPalette.primary,
+    fontWeight: FontWeight.semibold,
+  },
   stepText: {
-    flex: 1,
     fontSize: FontSize.base,
     color: C.text,
     lineHeight: 22,

@@ -137,10 +137,19 @@ setItems([...items, newItem]);        // ❌ stale closure
 
 - **Modèle** : `claude-haiku-4-5-20251001` · **Temperature** : `0.2`
 - `generateRecipeSuggestions(fridgeItems, preferences?)` — génère 5-8 recettes
-- `generateRecipeSteps(title, recipeIngredients, fridgeItems)` — étapes à la demande
+- `generateRecipeSteps(title, recipeIngredients, fridgeItems)` → `Promise<RecipeDetails>` — détails structurés à la demande
 - `filterRecipes(recipes, physicalState, craving)` — filtrage local
 - **1 appel API** par changement de frigo ou de préférences — jamais par sélection de mood
 - Filtrage mood/état fait **localement** sur les recettes déjà générées (pas de nouvel appel)
+
+**Types retournés par `generateRecipeSteps` :**
+```typescript
+type RecipeStep = { action: string; duration?: string };
+type RecipeDetails = { servings: number; equipment: string[]; steps: RecipeStep[] };
+```
+- `equipment` : ustensiles réellement utilisés (poêle, couteau, etc.) — affichés en chips dans le modal
+- `steps.action` : action culinaire pure, **sans** durée dans le texte
+- `steps.duration` : durée en string court (`"2-3 min"`) ou `undefined` — affiché comme badge vert sur chaque étape
 
 **Contraintes temps par état physique (post-processing inclus côté client) :**
 - `tired` → ≤ 20 min
