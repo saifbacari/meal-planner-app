@@ -211,7 +211,7 @@ updated_at timestamptz default now()
 - REC-7 : Error handling scan + modal
 - REC-8 : Pull-to-refresh Dashboard
 - REC-9 : Édition préférences depuis le Profil
-- REC-10 : Liste de courses
+- REC-10 : Liste de courses — basse priorité
 - REC-13 : Paywall trial 3 jours (RevenueCat) — basse priorité
 
 ---

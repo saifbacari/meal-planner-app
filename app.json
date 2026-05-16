@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "mon-app",
-    "slug": "mon-app",
+    "slug": "eat-advisor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.saifbacari.recettesmaison",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,6 +45,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b59c88b9-7f08-4a2a-947f-403270be0db0"
+      }
+    },
+    "owner": "saifmrdj"
   }
 }
