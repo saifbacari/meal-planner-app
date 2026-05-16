@@ -158,9 +158,11 @@ type RecipeDetails = { servings: number; equipment: string[]; steps: RecipeStep[
 - `fit` → pas de limite
 
 **IDs préférences (utilisés dans onboarding ET dans le prompt Claude) :**
-- Objectifs : `lose_weight` · `eat_healthy` · `build_muscle` · `maintain`
-- Régimes : `omnivore` · `vegetarian` · `vegan` · `pescatarian` · `halal` · `kosher` · `no_pork`
-- Allergies : `gluten` · `lactose` · `nuts` · `seafood` · `eggs` · `soy` · `peanuts`
+- Objectifs : `lose_weight` · `eat_healthy` · `build_muscle` · `maintain` — **single-select**
+- Régime de base : `omnivore` · `vegetarian` · `vegan` · `pescatarian` — **single-select**
+- Restriction religieuse : `halal` · `kosher` · `no_pork` — **single-select** (mutuellement exclusifs)
+- `diet` en Supabase = `[baseDiet, restriction?]` ex: `["vegetarian", "halal"]`
+- Allergies : `gluten` · `lactose` · `nuts` · `seafood` · `eggs` · `soy` · `peanuts` — multi-select
 - Équipement : `oven` · `microwave` · `air_fryer` · `blender` · `steamer` · `pressure_cooker`
   (poêle et casserole = toujours disponibles, pas dans la liste)
 
@@ -201,25 +203,26 @@ updated_at timestamptz default now()
 
 ---
 
-## État du projet (2026-05-13)
+## État du projet (2026-05-16)
 
 ### ✅ Implémenté
 - Auth (login/signup/logout/delete account)
 - Onboarding 5 étapes + welcome + finish (step5 = équipement cuisine)
-- Dashboard avec suggestions IA + filtres mood
-- Frigo avec catégories + scan code-barre
+- Dashboard avec suggestions IA + filtres mood + pull-to-refresh
+- Frigo avec catégories (matching accent-insensible) + scan code-barre + autocomplétion (~170 aliments)
+- Footer frigo contextuel : "Ajouter" si texte en cours, "Scanner" sinon
 - Favoris (stockage par user : `@favorites_${userId}`)
-- Profil
+- Profil + édition préférences (REC-9)
 - Préférences injectées dans le prompt Claude (régime, allergies, objectifs, niveau, temps, équipement)
 - Pills "Filtré selon" sur le dashboard
 - Ingrédients manquants mis en valeur (orange + icône panier) sur RecipeCard et RecipeDetailModal
 - Storage frigo et favoris isolés par utilisateur (`@fridge_items_${userId}`)
+- Modal recette structuré : ustensiles en chips, durée par étape, portions
+- Objectifs single-select, régime de base single-select, restriction religieuse single-select
+- Error handling REC-7 : timeout scan (8s) + retry étapes recette
+- Skeleton loaders (REC-6)
 
 ### 🔜 Backlog (Linear)
-- REC-6 : Skeleton loaders
-- REC-7 : Error handling scan + modal
-- REC-8 : Pull-to-refresh Dashboard
-- REC-9 : Édition préférences depuis le Profil
 - REC-10 : Liste de courses — basse priorité
 - REC-13 : Paywall trial 3 jours (RevenueCat) — basse priorité
 
@@ -231,3 +234,4 @@ updated_at timestamptz default now()
 - Format : `feat: ...` / `fix: ...` / `chore: ...`
 - Ne jamais committer `.env` ni `.mcp.json` (dans `.gitignore`)
 - Après chaque commit : `git push`
+- **Toujours merger une branche terminée sur `master` avant d'en créer une nouvelle**
