@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -10,33 +10,12 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { ColorPalette, Colors, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
-
-// Affiche brièvement le dernier caractère saisi avant de masquer
-function usePasswordPeek(setter: (v: string) => void) {
-  const [secure, setSecure] = useState(true);
-  const prevLength = useRef(0);
-  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleChange = useCallback((text: string) => {
-    setter(text);
-    if (text.length > prevLength.current) {
-      setSecure(false);
-      if (timeout.current) clearTimeout(timeout.current);
-      timeout.current = setTimeout(() => setSecure(true), 300);
-    } else {
-      if (timeout.current) clearTimeout(timeout.current);
-      setSecure(true);
-    }
-    prevLength.current = text.length;
-  }, [setter]);
-
-  return { secure, handleChange };
-}
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -46,8 +25,8 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const pwdPeek = usePasswordPeek(setPassword);
-  const confirmPeek = usePasswordPeek(setConfirmPassword);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -143,29 +122,39 @@ export default function LoginScreen() {
               autoComplete="email"
               returnKeyType="next"
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Mot de passe"
-              placeholderTextColor={C.textMuted}
-              value={password}
-              onChangeText={pwdPeek.handleChange}
-              secureTextEntry={pwdPeek.secure}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              returnKeyType={mode === 'login' ? 'done' : 'next'}
-              onSubmitEditing={mode === 'login' ? handleSubmit : undefined}
-            />
-            {mode === 'signup' && (
+            <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
-                placeholder="Confirmer le mot de passe"
+                style={styles.inputWithIcon}
+                placeholder="Mot de passe"
                 placeholderTextColor={C.textMuted}
-                value={confirmPassword}
-                onChangeText={confirmPeek.handleChange}
-                secureTextEntry={confirmPeek.secure}
-                autoComplete="new-password"
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                returnKeyType={mode === 'login' ? 'done' : 'next'}
+                onSubmitEditing={mode === 'login' ? handleSubmit : undefined}
               />
+              <TouchableOpacity onPress={() => setShowPassword((v) => !v)} style={styles.eyeBtn}>
+                <MaterialIcons name={showPassword ? 'visibility-off' : 'visibility'} size={20} color={C.textMuted} />
+              </TouchableOpacity>
+            </View>
+            {mode === 'signup' && (
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.inputWithIcon}
+                  placeholder="Confirmer le mot de passe"
+                  placeholderTextColor={C.textMuted}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirm}
+                  autoComplete="new-password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                />
+                <TouchableOpacity onPress={() => setShowConfirm((v) => !v)} style={styles.eyeBtn}>
+                  <MaterialIcons name={showConfirm ? 'visibility-off' : 'visibility'} size={20} color={C.textMuted} />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -263,6 +252,25 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm + 4,
     fontSize: FontSize.base,
     color: C.text,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.background,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  inputWithIcon: {
+    flex: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 4,
+    fontSize: FontSize.base,
+    color: C.text,
+  },
+  eyeBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 4,
   },
   error: {
     fontSize: FontSize.sm,

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -51,14 +51,19 @@ export function OnboardingLayout({
         <Text style={styles.progressText}>{step}/{total}</Text>
       </View>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>{children}</View>
+      {/* Scrollable body: header + content */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
+        {children}
+      </ScrollView>
 
       {/* Footer */}
       <View style={styles.footer}>
@@ -114,8 +119,14 @@ const styles = StyleSheet.create({
     minWidth: 24,
     textAlign: 'right',
   },
-  header: {
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
     paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
+  header: {
     paddingBottom: Spacing.lg,
     gap: Spacing.sm,
   },
@@ -128,10 +139,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.base,
     color: C.textMuted,
     lineHeight: 22,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: Spacing.lg,
   },
   footer: {
     flexDirection: 'row',

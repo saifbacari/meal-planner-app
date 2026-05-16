@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +14,8 @@ import { useRouter } from 'expo-router';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import { usePreferences } from '@/contexts/PreferencesContext';
+import { EditPreferencesModal } from '@/components/modals/EditPreferencesModal';
 import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
@@ -71,6 +74,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut, deleteAccount } = useAuth();
   const { favorites } = useFavorites();
+  const { preferences } = usePreferences();
+  const [editPrefsVisible, setEditPrefsVisible] = useState(false);
 
   const email = user?.email ?? '';
   const memberSince = user?.created_at
@@ -178,12 +183,18 @@ export default function ProfileScreen() {
         {/* Préférences alimentaires */}
         <Text style={styles.sectionLabel}>PRÉFÉRENCES ALIMENTAIRES</Text>
         <View style={styles.card}>
-          <Row icon="no-meals" label="Allergies & exclusions" soon />
-          <View style={styles.divider} />
-          <Row icon="eco" label="Régime alimentaire" soon />
-          <View style={styles.divider} />
-          <Row icon="fitness-center" label="Objectif nutritionnel" soon />
+          <Row
+            icon="tune"
+            label="Modifier mes préférences"
+            value={preferences.diet.includes('omnivore') ? 'Omnivore' : preferences.diet[0] ?? '—'}
+            onPress={() => setEditPrefsVisible(true)}
+          />
         </View>
+
+        <EditPreferencesModal
+          visible={editPrefsVisible}
+          onClose={() => setEditPrefsVisible(false)}
+        />
 
         {/* Paramètres */}
         <Text style={styles.sectionLabel}>PARAMÈTRES</Text>

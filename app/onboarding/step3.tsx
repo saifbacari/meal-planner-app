@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
@@ -44,7 +44,7 @@ export default function Step3() {
       canNext
       showSkip
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <View style={styles.container}>
         <Text style={styles.sectionLabel}>Temps de préparation préféré</Text>
         <View style={styles.grid}>
           {TIMES.map((t) => (
@@ -70,7 +70,7 @@ export default function Step3() {
             />
           ))}
         </View>
-      </ScrollView>
+      </View>
     </OnboardingLayout>
   );
 }

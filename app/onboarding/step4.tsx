@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
@@ -115,7 +115,7 @@ export default function Step4() {
       canNext
       showSkip
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <View style={styles.scroll}>
         {INGREDIENT_CATEGORIES.map((category) => (
           <View key={category.label} style={styles.category}>
             <Text style={styles.categoryLabel}>{category.label}</Text>
@@ -139,7 +139,7 @@ export default function Step4() {
             </View>
           </View>
         ))}
-      </ScrollView>
+      </View>
     </OnboardingLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
@@ -62,7 +62,7 @@ export default function Step2() {
       canNext={diet.length > 0}
       showSkip
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <View style={styles.content}>
         <Text style={styles.sectionLabel}>Régime alimentaire</Text>
         <View style={styles.grid}>
           {DIETS.map((d) => (
@@ -90,14 +90,14 @@ export default function Step2() {
             />
           ))}
         </View>
-      </ScrollView>
+      </View>
     </OnboardingLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingBottom: Spacing.xl,
+  content: {
+    gap: Spacing.md,
   },
   sectionLabel: {
     fontSize: FontSize.base,

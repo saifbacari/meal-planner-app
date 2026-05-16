@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { OnboardingLayout } from '@/components/onboarding/OnboardingLayout';
@@ -11,9 +11,9 @@ const C = Colors.dark;
 
 const EQUIPMENT = [
   { id: 'oven', emoji: '🔥', label: 'Four' },
-  { id: 'microwave', emoji: '📡', label: 'Micro-ondes' },
+  { id: 'microwave', emoji: '⚡', label: 'Micro-ondes' },
   { id: 'air_fryer', emoji: '💨', label: 'Air Fryer' },
-  { id: 'blender', emoji: '🧃', label: 'Mixeur / Blender' },
+  { id: 'blender', emoji: '🌀', label: 'Mixeur / Blender' },
   { id: 'steamer', emoji: '♨️', label: 'Cuiseur vapeur' },
   { id: 'pressure_cooker', emoji: '🫕', label: 'Cocotte-minute' },
 ];
@@ -45,7 +45,7 @@ export default function Step5() {
       canNext
       showSkip={false}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.container}>
+      <View style={styles.container}>
         <Text style={styles.hint}>La poêle et la casserole sont toujours incluses.</Text>
         <View style={styles.grid}>
           {EQUIPMENT.map((item) => (
@@ -58,7 +58,7 @@ export default function Step5() {
             />
           ))}
         </View>
-      </ScrollView>
+      </View>
     </OnboardingLayout>
   );
 }
