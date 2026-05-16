@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,63 @@ import { BarcodeScannerModal } from '@/components/modals/BarcodeScannerModal';
 import { Colors, ColorPalette, Spacing, Radius, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
+
+const FOOD_SUGGESTIONS = [
+  // Fruits
+  'pomme', 'poire', 'banane', 'orange', 'citron', 'citron vert', 'fraise', 'framboise',
+  'myrtille', 'cerise', 'raisin', 'mangue', 'ananas', 'kiwi', 'pêche', 'abricot',
+  'prune', 'melon', 'pastèque', 'avocat', 'figue', 'grenade', 'papaye', 'litchi',
+  // Légumes
+  'tomate', 'carotte', 'pomme de terre', 'oignon', 'oignon rouge', 'ail', 'courgette',
+  'aubergine', 'poivron rouge', 'poivron vert', 'poivron jaune', 'brocoli', 'chou-fleur',
+  'épinard', 'salade', 'laitue', 'roquette', 'concombre', 'poireau', 'champignon',
+  'céleri', 'betterave', 'haricots verts', 'petits pois', 'maïs', 'asperge', 'artichaut',
+  'navet', 'fenouil', 'radis', 'patate douce', 'courge', 'potiron', 'chou', 'chou rouge',
+  // Viandes
+  'poulet', 'escalope de poulet', 'cuisse de poulet', 'blanc de poulet',
+  'bœuf', 'steak haché', 'côte de bœuf', 'agneau', 'côtelette d\'agneau',
+  'veau', 'porc', 'côte de porc', 'dinde', 'canard', 'lapin',
+  'saucisse', 'merguez', 'chipolata', 'lardons', 'jambon',
+  // Poissons & fruits de mer
+  'saumon', 'thon', 'thon en boîte', 'cabillaud', 'dorade', 'lieu noir',
+  'crevette', 'moule', 'sardine', 'maquereau', 'truite', 'sole',
+  // Produits laitiers
+  'lait', 'lait de coco', 'beurre', 'crème fraîche', 'crème liquide',
+  'fromage râpé', 'gruyère', 'mozzarella', 'parmesan', 'camembert', 'brie',
+  'ricotta', 'feta', 'yaourt', 'fromage blanc', 'mascarpone',
+  // Œufs
+  'œufs',
+  // Féculents & Céréales
+  'pâtes', 'spaghetti', 'tagliatelles', 'penne', 'riz', 'riz basmati',
+  'farine', 'farine de blé', 'semoule', 'quinoa', 'boulgour', 'polenta',
+  'pain de mie', 'baguette', 'levure', 'biscottes',
+  // Légumineuses
+  'lentilles', 'lentilles corail', 'pois chiches', 'haricots blancs',
+  'haricots rouges', 'fèves', 'edamame',
+  // Huiles & Condiments
+  "huile d'olive", 'huile de tournesol', 'huile de sésame',
+  'vinaigre', 'vinaigre balsamique', 'vinaigre de cidre',
+  'moutarde', 'sauce soja', 'sauce worcestershire', 'ketchup', 'mayonnaise',
+  'tabasco', 'sriracha', 'nuoc-mâm', 'tahini', 'pesto',
+  // Conserves & Sauces
+  'coulis de tomate', 'tomates concassées', 'tomates pelées', 'concentré de tomate',
+  'olives', 'câpres', 'cornichons',
+  // Herbes & Épices
+  'basilic', 'persil', 'coriandre', 'thym', 'romarin', 'laurier', 'ciboulette',
+  'cumin', 'paprika', 'curry', 'cannelle', 'curcuma', 'gingembre', 'piment',
+  'noix de muscade', 'herbes de provence', 'origan', 'aneth', 'estragon',
+  // Sucré & Boulangerie
+  'sucre', 'sucre roux', 'miel', 'sirop d\'érable', 'chocolat noir',
+  'chocolat au lait', 'poudre de cacao', 'confiture', 'nutella',
+  // Fruits secs & Graines
+  'noix', 'amande', 'noisette', 'pistache', 'noix de cajou', 'noix de coco râpée',
+  'graines de sésame', 'graines de chia', 'graines de tournesol',
+  // Bouillons
+  'bouillon de légumes', 'bouillon de poulet', 'bouillon de bœuf',
+];
+
+const normalize = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const CATEGORIES: { label: string; emoji: string; names: string[] }[] = [
   { label: 'Essentiels', emoji: '🫙', names: ["huile d'olive", 'beurre', 'sel & poivre', 'ail', 'oignon'] },
@@ -58,6 +115,16 @@ export default function FridgeScreen() {
   const [inputValue, setInputValue] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const inputRef = useRef<TextInput>(null);
+
+  const suggestions = useMemo(() => {
+    const q = inputValue.trim();
+    if (q.length < 2) return [];
+    const qn = normalize(q);
+    const inFridge = new Set(items.map((i) => normalize(i.name)));
+    return FOOD_SUGGESTIONS.filter(
+      (s) => normalize(s).includes(qn) && !inFridge.has(normalize(s))
+    ).slice(0, 6);
+  }, [inputValue, items]);
 
   const handleAdd = () => {
     if (!inputValue.trim()) return;
@@ -122,6 +189,26 @@ export default function FridgeScreen() {
           <MaterialIcons name="add" size={22} color="#000" />
         </TouchableOpacity>
       </View>
+
+      {/* Autocomplete suggestions */}
+      {suggestions.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          contentContainerStyle={styles.suggestionsRow}
+        >
+          {suggestions.map((s) => (
+            <TouchableOpacity
+              key={s}
+              style={styles.suggestionChip}
+              onPress={() => { addItem(s); setInputValue(''); }}
+            >
+              <Text style={styles.suggestionText}>{s}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       {/* List */}
       {items.length === 0 ? (
@@ -258,6 +345,24 @@ const styles = StyleSheet.create({
   },
   addBtnDisabled: {
     opacity: 0.4,
+  },
+  suggestionsRow: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  suggestionChip: {
+    backgroundColor: C.surface,
+    borderWidth: 1,
+    borderColor: C.border,
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+  },
+  suggestionText: {
+    fontSize: FontSize.sm,
+    color: C.text,
+    fontWeight: FontWeight.medium,
   },
   list: {
     paddingHorizontal: Spacing.lg,

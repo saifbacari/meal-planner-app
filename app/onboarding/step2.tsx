@@ -9,11 +9,14 @@ import { Colors, Spacing, FontSize, FontWeight } from '@/constants/theme';
 
 const C = Colors.dark;
 
-const DIETS = [
+const BASE_DIETS = [
   { id: 'omnivore', emoji: '🍖', label: 'Omnivore' },
   { id: 'vegetarian', emoji: '🥦', label: 'Végétarien' },
   { id: 'vegan', emoji: '🌱', label: 'Vegan' },
   { id: 'pescatarian', emoji: '🐟', label: 'Pescétarien' },
+];
+
+const RESTRICTIONS = [
   { id: 'halal', emoji: '☪️', label: 'Halal' },
   { id: 'kosher', emoji: '✡️', label: 'Casher' },
   { id: 'no_pork', emoji: '🐷', label: 'Sans porc' },
@@ -32,12 +35,18 @@ const ALLERGIES = [
 export default function Step2() {
   const router = useRouter();
   const { updateDraft, draft } = usePreferences();
-  const [diet, setDiet] = useState<string[]>(draft.diet ?? ['omnivore']);
+  const initialDiet = draft.diet ?? ['omnivore'];
+  const [baseDiet, setBaseDiet] = useState<string>(
+    BASE_DIETS.find((d) => initialDiet.includes(d.id))?.id ?? 'omnivore'
+  );
+  const [restrictions, setRestrictions] = useState<string[]>(
+    initialDiet.filter((d) => RESTRICTIONS.some((r) => r.id === d))
+  );
   const [allergies, setAllergies] = useState<string[]>(draft.allergies ?? []);
 
-  const toggleDiet = (id: string) => {
-    setDiet((prev) =>
-      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
+  const toggleRestriction = (id: string) => {
+    setRestrictions((prev) =>
+      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
     );
   };
 
@@ -48,7 +57,7 @@ export default function Step2() {
   };
 
   const handleNext = () => {
-    updateDraft({ diet, allergies });
+    updateDraft({ diet: [baseDiet, ...restrictions], allergies });
     router.push('/onboarding/step3');
   };
 
@@ -59,19 +68,34 @@ export default function Step2() {
       title="Ton régime & tes allergies"
       subtitle="Ces informations guident chaque suggestion de recette."
       onNext={handleNext}
-      canNext={diet.length > 0}
+      canNext={baseDiet !== ''}
       showSkip
     >
       <View style={styles.content}>
-        <Text style={styles.sectionLabel}>Régime alimentaire</Text>
+        <Text style={styles.sectionLabel}>Type de régime</Text>
         <View style={styles.grid}>
-          {DIETS.map((d) => (
+          {BASE_DIETS.map((d) => (
             <ChoiceCard
               key={d.id}
               emoji={d.emoji}
               label={d.label}
-              selected={diet.includes(d.id)}
-              onPress={() => toggleDiet(d.id)}
+              selected={baseDiet === d.id}
+              onPress={() => setBaseDiet(d.id)}
+            />
+          ))}
+        </View>
+
+        <Text style={[styles.sectionLabel, { marginTop: Spacing.xl }]}>
+          Restrictions religieuses / culturelles
+        </Text>
+        <View style={styles.grid}>
+          {RESTRICTIONS.map((r) => (
+            <ChoiceCard
+              key={r.id}
+              emoji={r.emoji}
+              label={r.label}
+              selected={restrictions.includes(r.id)}
+              onPress={() => toggleRestriction(r.id)}
             />
           ))}
         </View>

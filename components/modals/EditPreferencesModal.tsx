@@ -24,11 +24,14 @@ const GOALS = [
   { id: 'maintain', emoji: '⚖️', label: 'Maintien en forme' },
 ];
 
-const DIETS = [
+const BASE_DIETS = [
   { id: 'omnivore', emoji: '🍖', label: 'Omnivore' },
   { id: 'vegetarian', emoji: '🥦', label: 'Végétarien' },
   { id: 'vegan', emoji: '🌱', label: 'Vegan' },
   { id: 'pescatarian', emoji: '🐟', label: 'Pescétarien' },
+];
+
+const RESTRICTIONS = [
   { id: 'halal', emoji: '☪️', label: 'Halal' },
   { id: 'kosher', emoji: '✡️', label: 'Casher' },
   { id: 'no_pork', emoji: '🐷', label: 'Sans porc' },
@@ -76,8 +79,13 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const { preferences, savePreferences } = usePreferences();
 
-  const [goals, setGoals] = useState<string[]>(preferences.goals);
-  const [diet, setDiet] = useState<string[]>(preferences.diet);
+  const [goal, setGoal] = useState<string>(preferences.goals?.[0] ?? '');
+  const [baseDiet, setBaseDiet] = useState<string>(
+    BASE_DIETS.find((d) => preferences.diet.includes(d.id))?.id ?? 'omnivore'
+  );
+  const [restrictions, setRestrictions] = useState<string[]>(
+    preferences.diet.filter((d) => RESTRICTIONS.some((r) => r.id === d))
+  );
   const [allergies, setAllergies] = useState<string[]>(preferences.allergies);
   const [time, setTime] = useState<string>(preferences.preferred_time);
   const [level, setLevel] = useState<string>(preferences.cooking_level);
@@ -90,15 +98,16 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
 
   const handleSave = async () => {
     setSaving(true);
-    await savePreferences({ goals, diet, allergies, preferred_time: time, cooking_level: level, equipment });
+    await savePreferences({ goals: goal ? [goal] : [], diet: [baseDiet, ...restrictions], allergies, preferred_time: time, cooking_level: level, equipment });
     setSaving(false);
     onClose();
   };
 
   // Reset local state to current preferences when modal opens
   const handleOpen = () => {
-    setGoals(preferences.goals);
-    setDiet(preferences.diet);
+    setGoal(preferences.goals?.[0] ?? '');
+    setBaseDiet(BASE_DIETS.find((d) => preferences.diet.includes(d.id))?.id ?? 'omnivore');
+    setRestrictions(preferences.diet.filter((d) => RESTRICTIONS.some((r) => r.id === d)));
     setAllergies(preferences.allergies);
     setTime(preferences.preferred_time);
     setLevel(preferences.cooking_level);
@@ -133,28 +142,41 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
-          <Text style={styles.sectionLabel}>Objectifs</Text>
+          <Text style={styles.sectionLabel}>Objectif principal</Text>
           <View style={styles.grid}>
             {GOALS.map((item) => (
               <ChoiceCard
                 key={item.id}
                 emoji={item.emoji}
                 label={item.label}
-                selected={goals.includes(item.id)}
-                onPress={() => toggle(goals, setGoals, item.id)}
+                selected={goal === item.id}
+                onPress={() => setGoal(item.id)}
               />
             ))}
           </View>
 
-          <Text style={styles.sectionLabel}>Régime alimentaire</Text>
+          <Text style={styles.sectionLabel}>Type de régime</Text>
           <View style={styles.grid}>
-            {DIETS.map((item) => (
+            {BASE_DIETS.map((item) => (
               <ChoiceCard
                 key={item.id}
                 emoji={item.emoji}
                 label={item.label}
-                selected={diet.includes(item.id)}
-                onPress={() => toggle(diet, setDiet, item.id)}
+                selected={baseDiet === item.id}
+                onPress={() => setBaseDiet(item.id)}
+              />
+            ))}
+          </View>
+
+          <Text style={styles.sectionLabel}>Restrictions religieuses / culturelles</Text>
+          <View style={styles.grid}>
+            {RESTRICTIONS.map((item) => (
+              <ChoiceCard
+                key={item.id}
+                emoji={item.emoji}
+                label={item.label}
+                selected={restrictions.includes(item.id)}
+                onPress={() => toggle(restrictions, setRestrictions, item.id)}
               />
             ))}
           </View>
