@@ -76,7 +76,7 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
   const insets = useSafeAreaInsets();
   const { preferences, savePreferences } = usePreferences();
 
-  const [goals, setGoals] = useState<string[]>(preferences.goals);
+  const [goal, setGoal] = useState<string>(preferences.goals?.[0] ?? '');
   const [diet, setDiet] = useState<string[]>(preferences.diet);
   const [allergies, setAllergies] = useState<string[]>(preferences.allergies);
   const [time, setTime] = useState<string>(preferences.preferred_time);
@@ -90,14 +90,14 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
 
   const handleSave = async () => {
     setSaving(true);
-    await savePreferences({ goals, diet, allergies, preferred_time: time, cooking_level: level, equipment });
+    await savePreferences({ goals: goal ? [goal] : [], diet, allergies, preferred_time: time, cooking_level: level, equipment });
     setSaving(false);
     onClose();
   };
 
   // Reset local state to current preferences when modal opens
   const handleOpen = () => {
-    setGoals(preferences.goals);
+    setGoal(preferences.goals?.[0] ?? '');
     setDiet(preferences.diet);
     setAllergies(preferences.allergies);
     setTime(preferences.preferred_time);
@@ -133,15 +133,15 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
 
-          <Text style={styles.sectionLabel}>Objectifs</Text>
+          <Text style={styles.sectionLabel}>Objectif principal</Text>
           <View style={styles.grid}>
             {GOALS.map((item) => (
               <ChoiceCard
                 key={item.id}
                 emoji={item.emoji}
                 label={item.label}
-                selected={goals.includes(item.id)}
-                onPress={() => toggle(goals, setGoals, item.id)}
+                selected={goal === item.id}
+                onPress={() => setGoal(item.id)}
               />
             ))}
           </View>

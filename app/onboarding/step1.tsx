@@ -17,16 +17,10 @@ const GOALS = [
 export default function Step1() {
   const router = useRouter();
   const { updateDraft, draft } = usePreferences();
-  const [selected, setSelected] = useState<string[]>(draft.goals ?? []);
-
-  const toggle = (id: string) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
-    );
-  };
+  const [selected, setSelected] = useState<string>(draft.goals?.[0] ?? '');
 
   const handleNext = () => {
-    updateDraft({ goals: selected });
+    updateDraft({ goals: selected ? [selected] : [] });
     router.push('/onboarding/step2');
   };
 
@@ -35,9 +29,9 @@ export default function Step1() {
       step={1}
       total={5}
       title="Quel est ton objectif ?"
-      subtitle="Choisis tout ce qui te correspond. On adaptera les suggestions en conséquence."
+      subtitle="Choisis ton objectif principal. On adaptera les suggestions en conséquence."
       onNext={handleNext}
-      canNext={selected.length > 0}
+      canNext={selected !== ''}
       showSkip
     >
       <View style={styles.grid}>
@@ -46,8 +40,8 @@ export default function Step1() {
             key={goal.id}
             emoji={goal.emoji}
             label={goal.label}
-            selected={selected.includes(goal.id)}
-            onPress={() => toggle(goal.id)}
+            selected={selected === goal.id}
+            onPress={() => setSelected(goal.id)}
           />
         ))}
       </View>
