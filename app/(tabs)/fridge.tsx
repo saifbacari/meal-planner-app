@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   StatusBar,
 } from 'react-native';
@@ -203,6 +204,11 @@ export default function FridgeScreen() {
   const [showScanner, setShowScanner] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidHide', () => setInputFocused(false));
+    return () => sub.remove();
+  }, []);
+
   const suggestions = useMemo(() => {
     const q = inputValue.trim();
     if (q.length < 2) return [];
@@ -336,7 +342,7 @@ export default function FridgeScreen() {
 
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}>
-        {inputFocused ? (
+        {inputFocused && inputValue.trim().length > 0 ? (
           <TouchableOpacity
             style={[styles.scanBtn, !inputValue.trim() && styles.addBtnDisabled]}
             onPress={handleAdd}
