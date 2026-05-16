@@ -279,65 +279,60 @@ export default function FridgeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Autocomplete suggestions */}
-      {suggestions.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
-          contentContainerStyle={styles.suggestionsRow}
-        >
-          {suggestions.map((s) => (
-            <TouchableOpacity
-              key={s}
-              style={styles.suggestionChip}
-              onPress={() => { addItem(s); setInputValue(''); }}
-            >
-              <Text style={styles.suggestionText}>{s}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+      {/* List + suggestions dans un seul ScrollView pour keyboardShouldPersistTaps */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={items.length === 0 && suggestions.length === 0 ? styles.scrollEmpty : styles.list}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+      >
+        {suggestions.length > 0 && (
+          <View style={styles.suggestionsRow}>
+            {suggestions.map((s) => (
+              <TouchableOpacity
+                key={s}
+                style={styles.suggestionChip}
+                onPress={() => { addItem(s); setInputValue(''); }}
+              >
+                <Text style={styles.suggestionText}>{s}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
-      {/* List */}
-      {items.length === 0 ? (
-        <View style={styles.emptyState}>
-          <MaterialIcons name="kitchen" size={64} color={C.border} />
-          <Text style={styles.emptyTitle}>Votre frigo est vide</Text>
-          <Text style={styles.emptySubtitle}>
-            Ajoutez des ingrédients par saisie ou en scannant un produit
-          </Text>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {groupByCategory(items).map((cat) => (
-            <View key={cat.label} style={styles.category}>
-              <View style={styles.categoryHeader}>
-                <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
-                <Text style={styles.categoryLabel}>{cat.label}</Text>
-                <Text style={styles.categoryCount}>{cat.items.length}</Text>
-              </View>
-              {cat.items.map((item) => (
-                <View key={item.id} style={styles.item}>
-                  <View style={styles.itemDot} />
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <TouchableOpacity
-                    onPress={() => removeItem(item.id)}
-                    style={styles.removeBtn}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <MaterialIcons name="close" size={18} color={C.textMuted} />
-                  </TouchableOpacity>
-                </View>
-              ))}
+        {items.length === 0 && suggestions.length === 0 && (
+          <>
+            <MaterialIcons name="kitchen" size={64} color={C.border} />
+            <Text style={styles.emptyTitle}>Votre frigo est vide</Text>
+            <Text style={styles.emptySubtitle}>
+              Ajoutez des ingrédients par saisie ou en scannant un produit
+            </Text>
+          </>
+        )}
+
+        {groupByCategory(items).map((cat) => (
+          <View key={cat.label} style={styles.category}>
+            <View style={styles.categoryHeader}>
+              <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+              <Text style={styles.categoryLabel}>{cat.label}</Text>
+              <Text style={styles.categoryCount}>{cat.items.length}</Text>
             </View>
-          ))}
-        </ScrollView>
-      )}
+            {cat.items.map((item) => (
+              <View key={item.id} style={styles.item}>
+                <View style={styles.itemDot} />
+                <Text style={styles.itemName}>{item.name}</Text>
+                <TouchableOpacity
+                  onPress={() => removeItem(item.id)}
+                  style={styles.removeBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <MaterialIcons name="close" size={18} color={C.textMuted} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
 
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}>
@@ -446,22 +441,34 @@ const styles = StyleSheet.create({
   addBtnDisabled: {
     opacity: 0.4,
   },
+  scroll: {
+    flex: 1,
+  },
+  scrollEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+  },
   suggestionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
-    gap: Spacing.sm,
   },
   suggestionChip: {
-    backgroundColor: C.surface,
+    backgroundColor: '#243d2e',
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: ColorPalette.primary,
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs + 2,
   },
   suggestionText: {
     fontSize: FontSize.sm,
-    color: C.text,
+    color: '#ffffff',
     fontWeight: FontWeight.medium,
   },
   list: {
@@ -522,13 +529,6 @@ const styles = StyleSheet.create({
   },
   removeBtn: {
     padding: Spacing.xs,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.xl,
   },
   emptyTitle: {
     fontSize: FontSize.lg,
