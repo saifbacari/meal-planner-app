@@ -199,6 +199,7 @@ export default function FridgeScreen() {
   const insets = useSafeAreaInsets();
   const { items, addItem, removeItem, clearFridge } = useFridge();
   const [inputValue, setInputValue] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -264,6 +265,8 @@ export default function FridgeScreen() {
           value={inputValue}
           onChangeText={setInputValue}
           onSubmitEditing={handleAdd}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
           returnKeyType="done"
           autoCapitalize="words"
         />
@@ -336,12 +339,23 @@ export default function FridgeScreen() {
         </ScrollView>
       )}
 
-      {/* Scan button */}
+      {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.md }]}>
-        <TouchableOpacity style={styles.scanBtn} onPress={() => setShowScanner(true)}>
-          <MaterialIcons name="qr-code-scanner" size={20} color="#000" />
-          <Text style={styles.scanBtnText}>Scanner un produit</Text>
-        </TouchableOpacity>
+        {inputFocused ? (
+          <TouchableOpacity
+            style={[styles.scanBtn, !inputValue.trim() && styles.addBtnDisabled]}
+            onPress={handleAdd}
+            disabled={!inputValue.trim()}
+          >
+            <MaterialIcons name="add" size={20} color="#000" />
+            <Text style={styles.scanBtnText}>Ajouter l'ingrédient</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.scanBtn} onPress={() => setShowScanner(true)}>
+            <MaterialIcons name="qr-code-scanner" size={20} color="#000" />
+            <Text style={styles.scanBtnText}>Scanner un produit</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <BarcodeScannerModal
