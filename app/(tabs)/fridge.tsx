@@ -78,13 +78,100 @@ const normalize = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 const CATEGORIES: { label: string; emoji: string; names: string[] }[] = [
-  { label: 'Essentiels', emoji: '🫙', names: ["huile d'olive", 'beurre', 'sel & poivre', 'ail', 'oignon'] },
-  { label: 'Féculents & Céréales', emoji: '🍝', names: ['pâtes', 'riz', 'farine', 'pain', 'lentilles'] },
-  { label: 'Produits frais', emoji: '🥚', names: ['œufs', 'lait', 'fromage', 'yaourt', 'crème fraîche'] },
-  { label: 'Fruits & Légumes', emoji: '🥦', names: ['tomates', 'pommes de terre', 'carottes', 'citron', 'épinards'] },
-  { label: 'Sauces & Condiments', emoji: '🥫', names: ['moutarde', 'sauce soja', 'coulis de tomate', 'vinaigre', 'olives'] },
-  { label: 'Herbes & Épices', emoji: '🌿', names: ['herbes fraîches', 'cumin', 'paprika', 'cannelle', 'thym'] },
-  { label: 'Douceurs', emoji: '🍯', names: ['sucre', 'miel', 'chocolat', 'confiture'] },
+  {
+    label: 'Fruits & Légumes', emoji: '🥦', names: [
+      'pomme', 'poire', 'banane', 'orange', 'citron', 'citron vert', 'fraise', 'framboise',
+      'myrtille', 'cerise', 'raisin', 'mangue', 'ananas', 'kiwi', 'peche', 'pêche', 'abricot',
+      'prune', 'melon', 'pasteque', 'pastèque', 'avocat', 'figue', 'grenade', 'papaye', 'litchi',
+      'clementine', 'clémentine', 'mandarine', 'pamplemousse', 'nectarine', 'brugnon',
+      'tomate', 'tomates', 'carotte', 'carottes', 'pomme de terre', 'pommes de terre',
+      'oignon', 'oignon rouge', 'ail', 'courgette', 'aubergine',
+      'poivron', 'poivron rouge', 'poivron vert', 'poivron jaune',
+      'brocoli', 'chou-fleur', 'epinard', 'épinard', 'epinards', 'épinards',
+      'salade', 'laitue', 'roquette', 'concombre', 'poireau', 'champignon', 'champignons',
+      'celeri', 'céleri', 'betterave', 'haricots verts', 'petits pois', 'mais', 'maïs',
+      'asperge', 'artichaut', 'navet', 'fenouil', 'radis', 'patate douce',
+      'courge', 'potiron', 'chou', 'chou rouge', 'brocolis',
+    ],
+  },
+  {
+    label: 'Viandes', emoji: '🥩', names: [
+      'poulet', 'escalope de poulet', 'cuisse de poulet', 'blanc de poulet', 'filet de poulet',
+      'boeuf', 'bœuf', 'steak hache', 'steak haché', 'cote de boeuf', 'côte de bœuf',
+      'agneau', 'cote d\'agneau', 'côtelette d\'agneau', 'veau', 'porc', 'cote de porc', 'côte de porc',
+      'dinde', 'canard', 'lapin', 'saucisse', 'merguez', 'chipolata', 'lardons', 'jambon',
+      'bacon', 'chorizo', 'andouille', 'boudin',
+    ],
+  },
+  {
+    label: 'Poissons & Fruits de mer', emoji: '🐟', names: [
+      'saumon', 'thon', 'thon en boite', 'thon en boîte', 'cabillaud', 'dorade', 'lieu noir',
+      'crevette', 'crevettes', 'moule', 'moules', 'sardine', 'sardines', 'maquereau', 'truite', 'sole',
+      'bar', 'colin', 'merlu', 'calamar', 'seiche', 'homard', 'langoustine',
+    ],
+  },
+  {
+    label: 'Produits frais', emoji: '🥚', names: [
+      'oeuf', 'œuf', 'oeufs', 'œufs', 'lait', 'lait de coco', 'beurre', 'creme fraiche',
+      'crème fraîche', 'creme liquide', 'crème liquide', 'fromage rape', 'fromage râpé',
+      'gruyere', 'gruyère', 'mozzarella', 'parmesan', 'camembert', 'brie', 'ricotta',
+      'feta', 'yaourt', 'fromage blanc', 'mascarpone', 'emmental', 'comté', 'comte',
+      'roquefort', 'cheddar', 'gouda', 'creme', 'crème',
+    ],
+  },
+  {
+    label: 'Féculents & Céréales', emoji: '🍝', names: [
+      'pates', 'pâtes', 'spaghetti', 'tagliatelles', 'penne', 'fusilli', 'farfalle', 'lasagne',
+      'riz', 'riz basmati', 'riz rond', 'farine', 'farine de ble', 'farine de blé',
+      'semoule', 'quinoa', 'boulgour', 'polenta', 'pain', 'pain de mie', 'baguette',
+      'biscottes', 'levure', 'chapelure',
+    ],
+  },
+  {
+    label: 'Légumineuses', emoji: '🫘', names: [
+      'lentilles', 'lentilles corail', 'pois chiches', 'haricots blancs',
+      'haricots rouges', 'feves', 'fèves', 'edamame', 'soja', 'tofu',
+    ],
+  },
+  {
+    label: 'Sauces & Condiments', emoji: '🥫', names: [
+      "huile d'olive", 'huile de tournesol', 'huile de sesame', 'huile de sésame', 'huile',
+      'vinaigre', 'vinaigre balsamique', 'vinaigre de cidre',
+      'moutarde', 'sauce soja', 'ketchup', 'mayonnaise', 'tabasco', 'sriracha',
+      'nuoc-mam', 'nuoc-mâm', 'tahini', 'pesto', 'coulis de tomate', 'tomates concassees',
+      'tomates concassées', 'tomates pelees', 'tomates pelées', 'concentre de tomate',
+      'concentré de tomate', 'olives', 'capres', 'câpres', 'cornichons', 'sauce worcestershire',
+    ],
+  },
+  {
+    label: 'Herbes & Épices', emoji: '🌿', names: [
+      'basilic', 'persil', 'coriandre', 'thym', 'romarin', 'laurier', 'ciboulette',
+      'cumin', 'paprika', 'curry', 'cannelle', 'curcuma', 'gingembre', 'piment',
+      'noix de muscade', 'herbes de provence', 'origan', 'aneth', 'estragon',
+      'sel', 'poivre', 'sel & poivre',
+    ],
+  },
+  {
+    label: 'Fruits secs & Graines', emoji: '🥜', names: [
+      'noix', 'amande', 'amandes', 'noisette', 'noisettes', 'pistache', 'pistaches',
+      'noix de cajou', 'noix de coco rapee', 'noix de coco râpée',
+      'graines de sesame', 'graines de sésame', 'graines de chia', 'graines de tournesol',
+      'raisins secs', 'pruneaux', 'abricots secs', 'cacahuetes', 'cacahuètes',
+    ],
+  },
+  {
+    label: 'Douceurs', emoji: '🍯', names: [
+      'sucre', 'sucre roux', 'miel', "sirop d'erable", "sirop d'érable",
+      'chocolat', 'chocolat noir', 'chocolat au lait', 'poudre de cacao',
+      'confiture', 'nutella', 'caramel', 'vanille',
+    ],
+  },
+  {
+    label: 'Bouillons & Fonds', emoji: '🍲', names: [
+      'bouillon de legumes', 'bouillon de légumes', 'bouillon de poulet',
+      'bouillon de boeuf', 'bouillon de bœuf', 'fond de veau',
+    ],
+  },
 ];
 
 function groupByCategory(items: FridgeItem[]): { label: string; emoji: string; items: FridgeItem[] }[] {
@@ -92,9 +179,8 @@ function groupByCategory(items: FridgeItem[]): { label: string; emoji: string; i
   const assigned = new Set<string>();
 
   for (const cat of CATEGORIES) {
-    const matched = items.filter((item) =>
-      cat.names.some((n) => n.toLowerCase() === item.name.toLowerCase())
-    );
+    const catNamesNorm = new Set(cat.names.map(normalize));
+    const matched = items.filter((item) => catNamesNorm.has(normalize(item.name)));
     if (matched.length > 0) {
       result.push({ label: cat.label, emoji: cat.emoji, items: matched });
       matched.forEach((i) => assigned.add(i.id));
