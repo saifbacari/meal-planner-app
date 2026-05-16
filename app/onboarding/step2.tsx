@@ -39,16 +39,10 @@ export default function Step2() {
   const [baseDiet, setBaseDiet] = useState<string>(
     BASE_DIETS.find((d) => initialDiet.includes(d.id))?.id ?? 'omnivore'
   );
-  const [restrictions, setRestrictions] = useState<string[]>(
-    initialDiet.filter((d) => RESTRICTIONS.some((r) => r.id === d))
+  const [restriction, setRestriction] = useState<string>(
+    initialDiet.find((d) => RESTRICTIONS.some((r) => r.id === d)) ?? ''
   );
   const [allergies, setAllergies] = useState<string[]>(draft.allergies ?? []);
-
-  const toggleRestriction = (id: string) => {
-    setRestrictions((prev) =>
-      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
-    );
-  };
 
   const toggleAllergy = (id: string) => {
     setAllergies((prev) =>
@@ -57,7 +51,7 @@ export default function Step2() {
   };
 
   const handleNext = () => {
-    updateDraft({ diet: [baseDiet, ...restrictions], allergies });
+    updateDraft({ diet: restriction ? [baseDiet, restriction] : [baseDiet], allergies });
     router.push('/onboarding/step3');
   };
 
@@ -94,8 +88,8 @@ export default function Step2() {
               key={r.id}
               emoji={r.emoji}
               label={r.label}
-              selected={restrictions.includes(r.id)}
-              onPress={() => toggleRestriction(r.id)}
+              selected={restriction === r.id}
+              onPress={() => setRestriction((prev) => prev === r.id ? '' : r.id)}
             />
           ))}
         </View>

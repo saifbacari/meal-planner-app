@@ -83,8 +83,8 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
   const [baseDiet, setBaseDiet] = useState<string>(
     BASE_DIETS.find((d) => preferences.diet.includes(d.id))?.id ?? 'omnivore'
   );
-  const [restrictions, setRestrictions] = useState<string[]>(
-    preferences.diet.filter((d) => RESTRICTIONS.some((r) => r.id === d))
+  const [restriction, setRestriction] = useState<string>(
+    preferences.diet.find((d) => RESTRICTIONS.some((r) => r.id === d)) ?? ''
   );
   const [allergies, setAllergies] = useState<string[]>(preferences.allergies);
   const [time, setTime] = useState<string>(preferences.preferred_time);
@@ -98,7 +98,7 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
 
   const handleSave = async () => {
     setSaving(true);
-    await savePreferences({ goals: goal ? [goal] : [], diet: [baseDiet, ...restrictions], allergies, preferred_time: time, cooking_level: level, equipment });
+    await savePreferences({ goals: goal ? [goal] : [], diet: restriction ? [baseDiet, restriction] : [baseDiet], allergies, preferred_time: time, cooking_level: level, equipment });
     setSaving(false);
     onClose();
   };
@@ -107,7 +107,7 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
   const handleOpen = () => {
     setGoal(preferences.goals?.[0] ?? '');
     setBaseDiet(BASE_DIETS.find((d) => preferences.diet.includes(d.id))?.id ?? 'omnivore');
-    setRestrictions(preferences.diet.filter((d) => RESTRICTIONS.some((r) => r.id === d)));
+    setRestriction(preferences.diet.find((d) => RESTRICTIONS.some((r) => r.id === d)) ?? '');
     setAllergies(preferences.allergies);
     setTime(preferences.preferred_time);
     setLevel(preferences.cooking_level);
@@ -175,8 +175,8 @@ export function EditPreferencesModal({ visible, onClose }: Props) {
                 key={item.id}
                 emoji={item.emoji}
                 label={item.label}
-                selected={restrictions.includes(item.id)}
-                onPress={() => toggle(restrictions, setRestrictions, item.id)}
+                selected={restriction === item.id}
+                onPress={() => setRestriction((prev) => prev === item.id ? '' : item.id)}
               />
             ))}
           </View>
