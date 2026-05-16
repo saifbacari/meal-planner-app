@@ -180,10 +180,11 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
 
             {details?.steps.map((step, i) => (
               <View key={i} style={styles.stepCard}>
-                <View style={styles.stepHeader}>
-                  <View style={styles.stepNumber}>
-                    <Text style={styles.stepNumberText}>{i + 1}</Text>
-                  </View>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>{i + 1}</Text>
+                </View>
+                <View style={styles.stepBody}>
+                  <Text style={styles.stepText}>{step.action}</Text>
                   {step.duration && (
                     <View style={styles.durationChip}>
                       <MaterialIcons name="schedule" size={11} color={ColorPalette.primary} />
@@ -191,7 +192,6 @@ export function RecipeDetailModal({ recipe, onClose }: Props) {
                     </View>
                   )}
                 </View>
-                <Text style={styles.stepText}>{step.action}</Text>
               </View>
             ))}
           </View>
@@ -343,17 +343,18 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.medium,
   },
   stepCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.md,
     backgroundColor: C.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
-    gap: Spacing.sm,
     borderWidth: 1,
     borderColor: C.border,
   },
-  stepHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  stepBody: {
+    flex: 1,
+    gap: Spacing.xs,
   },
   stepNumber: {
     width: 26,
